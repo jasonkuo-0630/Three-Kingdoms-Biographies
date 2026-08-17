@@ -1,0 +1,48 @@
+---
+import type { ParsedEvaluation } from "../../lib/parsePersonBody";
+
+interface Props {
+  contemporary: ParsedEvaluation[];
+  later: ParsedEvaluation[];
+}
+
+const { contemporary, later } = Astro.props;
+
+function renderGroup(label: string, items: ParsedEvaluation[]) {
+  return items.length > 0
+    ? { label, items }
+    : null;
+}
+
+const groups = [
+  renderGroup("當世評價", contemporary),
+  renderGroup("後世評價", later),
+].filter((group): group is { label: string; items: ParsedEvaluation[] } => Boolean(group));
+---
+
+<div class="person-evaluations">
+  {
+    groups.map((group) => (
+      <section class="person-overview__card">
+        <header class="person-overview__section-heading">
+          <p>人物評價</p>
+          <h3>{group.label}</h3>
+        </header>
+
+        <div class="person-evaluation-list">
+          {group.items.map((evaluation) => (
+            <blockquote class="person-evaluation">
+              <p class="person-evaluation__quote">「{evaluation.quote}」</p>
+              <footer class="person-evaluation__evaluator">
+                — {evaluation.evaluator}
+              </footer>
+              {evaluation.context && (
+                <p class="person-evaluation__context">{evaluation.context}</p>
+              )}
+            </blockquote>
+          ))}
+        </div>
+      </section>
+    ))
+  }
+</div>
