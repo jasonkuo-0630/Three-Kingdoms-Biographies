@@ -1,0 +1,327 @@
+---
+import type {
+  ParsedTitleAndRank,
+  ParsedFactionStage,
+} from "../../lib/parsePersonBody";
+
+
+export interface OverviewIdentity {
+  name: string;
+  otherNames?: string[];
+  posthumousTitle?: {
+    title: string;
+    grantedAt?: string;
+    grantedBy?: string;
+    note?: string;
+    citations?: { source: string; locator?: string }[];
+  };
+}
+
+
+export interface PersonLookupEntry {
+  name: string;
+  avatar: string;
+}
+
+
+interface Props {
+  identity: OverviewIdentity;
+  introParagraphs: string[];
+  primaryIdentities: string[];
+  titlesAndRanks: ParsedTitleAndRank[];
+  factionStages: ParsedFactionStage[];
+
+  /** 依人物代號查詢是否已有人物頁，供效力歷程產生連結與頭像使用 */
+  personLookup: Map<string, PersonLookupEntry>;
+}
+
+
+const {
+  identity,
+  introParagraphs,
+  primaryIdentities,
+  titlesAndRanks,
+  factionStages,
+  personLookup,
+} = Astro.props;
+
+
+const otherNames = identity.otherNames ?? [];
+
+const posthumousTitle = identity.posthumousTitle;
+
+const hasPosthumousDetail = Boolean(
+  posthumousTitle &&
+    (posthumousTitle.grantedAt ||
+      posthumousTitle.grantedBy ||
+      posthumousTitle.note ||
+      posthumousTitle.citations?.length),
+);
+
+
+/**
+ * 把「相鄰且效力對象相同」的階段合併成同一組，
+ * 但不打亂原本的歷史先後順序——
+ * 只合併緊挨在一起的同一位效力對象，
+ * 中間被別人打斷過的話，會分成兩組各自呈現。
+ */
+interface StageGroup {
+  leaderName: string;
+  leaderId?: string;
+  stages: ParsedFactionStage[];
+}
+
+const stageGroups: StageGroup[] = [];
+
+for (const stage of factionStages) {
+  const lastGroup = stageGroups[stageGroups.length - 1];
+
+  if (
+    lastGroup &&
+    lastGroup.leaderId === stage.leaderId &&
+    lastGroup.leaderName === stage.leaderName
+  ) {
+    lastGroup.stages.push(stage);
+  } else {
+    stageGroups.push({
+      leaderName: stage.leaderName,
+      leaderId: stage.leaderId,
+      stages: [stage],
+    });
+  }
+}
+
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+---
+
+
+<div class="person-overview">
+  <!-- 人物介紹 -->
+
+  {
+    introParagraphs.length > 0 && (
+      <section class="person-overview__card person-overview__intro">
+        <header class="person-overview__section-heading">
+          <p>人物介紹</p>
+          <h3>{identity.name}生平概覽</h3>
+        </header>
+
+        <div class="person-overview__prose">
+          {introParagraphs.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+
+  <!-- 主要身分與其他名稱 -->
+
+  {
+    (primaryIdentities.length > 0 || otherNames.length > 0) && (
+      <div class="person-overview__summary-grid">
+        {primaryIdentities.length > 0 && (
+          <section class="person-overview__mini-card">
+            <header>
+              <p>人物資料</p>
+              <h3>主要身分</h3>
+            </header>
+
+            <ul class="person-overview__identity-list">
+              {primaryIdentities.map((identityName) => (
+                <li>{identityName}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {otherNames.length > 0 && (
+          <section class="person-overview__mini-card">
+            <header>
+              <p>名稱記載</p>
+              <h3>其他名稱</h3>
+            </header>
+
+            <ul class="person-overview__name-list">
+              {otherNames.map((otherName) => (
+                <li>{otherName}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+    )
+  }
+
+
+  <!-- 官職與爵位 -->
+
+  {
+    titlesAndRanks.length > 0 && (
+      <section class="person-overview__card">
+        <header class="person-overview__section-heading">
+          <p>官爵履歷</p>
+          <h3>官職與爵位</h3>
+        </header>
+
+        <ol class="person-rank-list">
+          {titlesAndRanks.map((entry) => (
+            <li class="person-rank-list__item">
+              <div class="person-rank-list__period">
+                {entry.period ?? "時期不詳"}
+              </div>
+
+              <div class="person-rank-list__content">
+                <h4>{entry.title}</h4>
+
+                {(entry.type || entry.note) && (
+                  <p class="person-rank-list__meta">
+                    {entry.type && <span>{entry.type}</span>}
+                  </p>
+                )}
+
+                {entry.note && (
+                  <p class="person-rank-list__note">{entry.note}</p>
+                )}
+
+                {entry.citations.length > 0 && (
+                  <ul class="person-rank-list__sources">
+                    {entry.citations.map((citation) => (
+                      <li>
+                        {citation.source}
+                        {citation.locator && <small>{citation.locator}</small>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )
+  }
+
+
+  <!-- 所屬勢力與效力歷程 -->
+
+  {
+    stageGroups.length > 0 && (
+      <section class="person-overview__card">
+        <header class="person-overview__section-heading">
+          <p>所屬變化</p>
+          <h3>所屬勢力與效力歷程</h3>
+        </header>
+
+        <ol class="person-service-list">
+          {stageGroups.map((group) => {
+            const target = group.leaderId
+              ? personLookup.get(group.leaderId)
+              : undefined;
+
+            const leaderName = target?.name ?? group.leaderName;
+            const leaderAvatar = target?.avatar;
+            const LeaderTag = target ? "a" : "div";
+
+            return (
+              <li class="person-service-group">
+                <LeaderTag
+                  class:list={[
+                    "person-service-leader",
+                    { "is-link": Boolean(target) },
+                  ]}
+                  href={target ? `${base}character/${group.leaderId}/` : undefined}
+                >
+                  <img
+                    src={
+                      leaderAvatar
+                        ? `${base}${leaderAvatar}`
+                        : `${base}images/_placeholder.svg`
+                    }
+                    alt=""
+                  />
+
+                  <strong>{leaderName}</strong>
+
+                  {target && (
+                    <span class="person-service-leader__arrow" aria-hidden="true">
+                      →
+                    </span>
+                  )}
+                </LeaderTag>
+
+                <div class="person-service-stages">
+                  {group.stages.map((stage, index) => (
+                    <div
+                      class:list={[
+                        "person-service-stage",
+                        { "has-divider": index > 0 },
+                      ]}
+                    >
+                      <h4>{stage.title}</h4>
+
+                      {stage.period && (
+                        <p class="person-service-stage__period">
+                          {stage.period}
+                          {stage.periodUncertain && <small>年代推定</small>}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    )
+  }
+
+
+  <!-- 諡號補充 -->
+
+  {
+    hasPosthumousDetail && posthumousTitle && (
+      <section class="person-overview__card person-overview__posthumous">
+        <header class="person-overview__section-heading">
+          <p>身後追諡</p>
+        </header>
+
+        <div class="person-posthumous-detail">
+          <strong>{posthumousTitle.title}</strong>
+
+          <dl>
+            {posthumousTitle.grantedAt && (
+              <div>
+                <dt>追諡時間</dt>
+                <dd>{posthumousTitle.grantedAt}</dd>
+              </div>
+            )}
+
+            {posthumousTitle.grantedBy && (
+              <div>
+                <dt>授予者</dt>
+                <dd>{posthumousTitle.grantedBy}</dd>
+              </div>
+            )}
+          </dl>
+
+          {posthumousTitle.note && <p>{posthumousTitle.note}</p>}
+
+          {posthumousTitle.citations && posthumousTitle.citations.length > 0 && (
+            <ul class="person-posthumous-detail__sources">
+              {posthumousTitle.citations.map((citation) => (
+                <li>
+                  {citation.source}
+                  {citation.locator && <small>{citation.locator}</small>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+    )
+  }
+</div>
