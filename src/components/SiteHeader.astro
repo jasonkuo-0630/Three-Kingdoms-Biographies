@@ -1,0 +1,368 @@
+---
+import "../styles/site-header.css";
+
+export interface SearchPerson {
+  slug: string;
+  name: string;
+  courtesyName?: string;
+  avatar: string;
+}
+
+interface Props {
+  /** 首頁設為 true，其他頁面不填即可 */
+  showSearch?: boolean;
+
+  /** 人物搜尋名單，之後會改成由人物資料自動產生 */
+  searchPeople?: SearchPerson[];
+
+  /** 三國文獻庫網址，目前可以保持空白 */
+  referenceLibraryUrl?: string;
+}
+
+const {
+  showSearch = false,
+  searchPeople = [],
+  referenceLibraryUrl = "",
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+
+const searchDataJson = JSON.stringify(searchPeople).replace(
+  /</g,
+  "\\u003c",
+);
+---
+
+<header
+  class:list={[
+    "site-header",
+    { "site-header--with-search": showSearch },
+  ]}
+>
+  <div class="site-header__inner">
+    <!-- 左側：三國人物誌主品牌 -->
+    <a
+      class="site-brand site-brand--main"
+      href={base}
+      aria-label="回到三國人物誌首頁"
+    >
+      <span
+        class="site-brand__seal"
+        aria-hidden="true"
+      >
+        誌
+      </span>
+
+      <span class="site-brand__name">
+        三國人物誌
+      </span>
+    </a>
+
+    <!-- 中間：僅首頁顯示人物搜尋 -->
+    <div class="site-header__center">
+      {
+        showSearch && (
+          <div
+            class="person-search"
+            data-person-search
+            data-base={base}
+          >
+            <label
+              class="sr-only"
+              for="person-search-input"
+            >
+              搜尋人物姓名或字號
+            </label>
+
+            <div class="person-search__field">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                />
+
+                <line
+                  x1="21"
+                  y1="21"
+                  x2="16.65"
+                  y2="16.65"
+                />
+              </svg>
+
+              <input
+                id="person-search-input"
+                type="search"
+                placeholder="搜尋人物姓名或字號……"
+                autocomplete="off"
+              />
+            </div>
+
+            <ul
+              class="person-search__results"
+              aria-label="人物搜尋結果"
+              hidden
+            />
+
+            <script
+              type="application/json"
+              class="person-search__data"
+              set:html={searchDataJson}
+            />
+          </div>
+        )
+      }
+    </div>
+
+    <!-- 右側：三國文獻庫姊妹網站 -->
+    <div class="site-header__right">
+      {
+        referenceLibraryUrl ? (
+          <a
+            class="site-brand site-brand--library"
+            href={referenceLibraryUrl}
+            aria-label="前往姊妹網站三國文獻庫"
+          >
+            <span
+              class="site-brand__seal site-brand__seal--library"
+              aria-hidden="true"
+            >
+              典
+            </span>
+
+            <span class="site-brand__library-copy">
+              <span class="site-brand__name site-brand__name--library">
+                三國文獻庫
+              </span>
+
+              <span class="site-brand__external-hint">
+                前往網站
+
+                <span
+                  class="site-brand__external-arrow"
+                  aria-hidden="true"
+                >
+                  ↗
+                </span>
+              </span>
+            </span>
+          </a>
+        ) : (
+          <div
+            class="site-brand site-brand--library site-brand--disabled"
+            aria-label="姊妹網站三國文獻庫，連結尚未設定"
+          >
+            <span
+              class="site-brand__seal site-brand__seal--library"
+              aria-hidden="true"
+            >
+              典
+            </span>
+
+            <span class="site-brand__library-copy">
+              <span class="site-brand__name site-brand__name--library">
+                三國文獻庫
+              </span>
+
+              <span class="site-brand__external-hint">
+                前往網站
+
+                <span
+                  class="site-brand__external-arrow"
+                  aria-hidden="true"
+                >
+                  ↗
+                </span>
+              </span>
+            </span>
+          </div>
+        )
+      }
+    </div>
+  </div>
+</header>
+
+{
+  showSearch && (
+    <script>
+      const searchRoot = document.querySelector(
+        "[data-person-search]",
+      );
+
+      if (searchRoot instanceof HTMLElement) {
+        const input = searchRoot.querySelector("input");
+
+        const results = searchRoot.querySelector(
+          ".person-search__results",
+        );
+
+        const dataElement = searchRoot.querySelector(
+          ".person-search__data",
+        );
+
+        const base = searchRoot.dataset.base || "/";
+
+        type SearchPersonData = {
+          slug: string;
+          name: string;
+          courtesyName?: string;
+          avatar: string;
+        };
+
+        const people = JSON.parse(
+          dataElement?.textContent || "[]",
+        ) as SearchPersonData[];
+
+        function createResult(
+          person: SearchPersonData,
+        ) {
+          const item = document.createElement("li");
+          const link = document.createElement("a");
+
+          link.href =
+            `${base}character/${encodeURIComponent(person.slug)}/`;
+
+          const avatar = document.createElement("span");
+          avatar.className = "search-result__avatar";
+
+          const image = document.createElement("img");
+
+          image.src = /^(https?:)?\/\//.test(person.avatar)
+            ? person.avatar
+            : `${base}${person.avatar.replace(/^\/+/, "")}`;
+
+          image.alt = "";
+          image.loading = "lazy";
+
+          avatar.append(image);
+
+          const copy = document.createElement("span");
+          copy.className = "search-result__copy";
+
+          const name = document.createElement("strong");
+          name.textContent = person.name;
+
+          copy.append(name);
+
+          if (person.courtesyName) {
+            const courtesyName =
+              document.createElement("small");
+
+            courtesyName.textContent =
+              `字 ${person.courtesyName}`;
+
+            copy.append(courtesyName);
+          }
+
+          link.append(
+            avatar,
+            copy,
+          );
+
+          item.append(link);
+
+          return item;
+        }
+
+        function renderResults() {
+          if (
+            !(input instanceof HTMLInputElement) ||
+            !(results instanceof HTMLUListElement)
+          ) {
+            return;
+          }
+
+          const keyword =
+            input.value.trim().toLowerCase();
+
+          results.replaceChildren();
+
+          if (!keyword) {
+            results.hidden = true;
+            return;
+          }
+
+          // 只搜尋人物姓名與字號，不搜尋其他稱呼。
+          const matches = people
+            .filter((person) => {
+              const name =
+                person.name?.toLowerCase() || "";
+
+              const courtesyName =
+                person.courtesyName?.toLowerCase() || "";
+
+              return (
+                name.includes(keyword) ||
+                courtesyName.includes(keyword)
+              );
+            })
+            .slice(0, 8);
+
+          if (matches.length === 0) {
+            const empty =
+              document.createElement("li");
+
+            empty.className =
+              "person-search__empty";
+
+            empty.textContent =
+              "沒有符合的人物";
+
+            results.append(empty);
+          } else {
+            matches.forEach((person) => {
+              results.append(
+                createResult(person),
+              );
+            });
+          }
+
+          results.hidden = false;
+        }
+
+        input?.addEventListener(
+          "input",
+          renderResults,
+        );
+
+        input?.addEventListener(
+          "focus",
+          renderResults,
+        );
+
+        input?.addEventListener(
+          "keydown",
+          (event) => {
+            if (
+              event.key === "Escape" &&
+              results instanceof HTMLUListElement
+            ) {
+              results.hidden = true;
+            }
+          },
+        );
+
+        document.addEventListener(
+          "click",
+          (event) => {
+            if (
+              results instanceof HTMLUListElement &&
+              event.target instanceof Node &&
+              !searchRoot.contains(event.target)
+            ) {
+              results.hidden = true;
+            }
+          },
+        );
+      }
+    </script>
+  )
+}
