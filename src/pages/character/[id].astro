@@ -1,0 +1,327 @@
+---
+import {
+  getCollection,
+  type CollectionEntry,
+} from "astro:content";
+
+import SiteHeader from "../../components/SiteHeader.astro";
+
+import PersonHero from "../../components/person/PersonHero.astro";
+
+import PersonOverview from "../../components/person/PersonOverview.astro";
+
+import PersonRelations from "../../components/person/PersonRelations.astro";
+
+import PersonEvaluations from "../../components/person/PersonEvaluations.astro";
+
+import PersonBiography from "../../components/person/PersonBiography.astro";
+
+import PersonWorks from "../../components/person/PersonWorks.astro";
+
+import "../../styles/character-detail.css";
+
+import { parsePersonBody } from "../../lib/parsePersonBody";
+
+
+/**
+ * 依照 src/content/people/ 底下的 Markdown 檔案，
+ * 自動產生每一位人物的網址與頁面資料。
+ *
+ * 例如：
+ * src/content/people/guan-yu.md → /character/guan-yu/
+ */
+interface Props {
+  entry: CollectionEntry<"people">;
+  allPeople: CollectionEntry<"people">[];
+}
+
+export async function getStaticPaths() {
+  const people: CollectionEntry<"people">[] = await getCollection("people");
+
+  return people.map((entry: CollectionEntry<"people">) => ({
+    params: {
+      id: entry.data.id,
+    },
+
+    props: {
+      entry,
+      allPeople: people,
+    },
+  }));
+}
+
+
+const { entry, allPeople } = Astro.props as Props;
+
+const { data: frontmatter, body } = entry;
+
+const parsed = parsePersonBody(body ?? "");
+
+
+/**
+ * 給效力歷程／親屬關係查詢對方是否已有人物頁，
+ * 有的話才產生連結、帶入頭像。
+ */
+const personLookup = new Map(
+  allPeople.map((person: CollectionEntry<"people">) => [
+    person.data.id,
+    {
+      name: person.data.name,
+      avatar: person.data.avatar,
+    },
+  ]),
+);
+
+
+const identity = {
+  id: frontmatter.id,
+  name: frontmatter.name,
+  courtesyName: frontmatter.courtesyName,
+  originalCourtesyName: frontmatter.originalCourtesyName,
+  childhoodName: frontmatter.childhoodName,
+  artName: frontmatter.artName,
+  otherNames: frontmatter.otherNames,
+  faction: frontmatter.faction,
+  lifespan: frontmatter.lifespan,
+  birthplace: frontmatter.birthplace,
+  summary: frontmatter.summary,
+  avatar: frontmatter.avatar,
+
+  posthumousTitle: frontmatter.posthumousTitle
+    ? {
+        title: frontmatter.posthumousTitle.title,
+        grantedAt: frontmatter.posthumousTitle.grantedAt,
+        grantedBy: frontmatter.posthumousTitle.grantedBy,
+        note: frontmatter.posthumousTitle.note,
+
+        citations: (frontmatter.posthumousTitle.sources ?? []).map(
+          (sourceLine: string) => {
+            const [source, locator] = sourceLine.split("・");
+
+            return {
+              source: source.trim(),
+              locator: locator?.trim(),
+            };
+          },
+        ),
+      }
+    : undefined,
+};
+
+
+/**
+ * 判斷各分頁是否有資料。
+ */
+const hasHistoricalBio = parsed.historicalBio.length > 0;
+const hasRomanceBio = parsed.romanceBio.length > 0;
+const hasRelations = parsed.relations.length > 0;
+
+const hasWorks = parsed.works.length > 0;
+
+const hasEvaluations =
+  parsed.evaluations.contemporary.length > 0 ||
+  parsed.evaluations.later.length > 0;
+
+
+/**
+ * 根據人物實際資料建立分頁。
+ *
+ * 人物總覽固定顯示，
+ * 其他分頁沒有資料時不建立。
+ */
+const tabs = [
+  {
+    key: "overview",
+    label: "人物總覽",
+  },
+
+  ...(hasHistoricalBio
+    ? [{ key: "historical", label: "史實生平" }]
+    : []),
+
+  ...(hasRomanceBio
+    ? [{ key: "romance", label: "演義生平" }]
+    : []),
+
+  ...(hasRelations
+    ? [{ key: "relations", label: "親屬" }]
+    : []),
+
+  ...(hasWorks
+    ? [{ key: "works", label: "著作" }]
+    : []),
+
+  ...(hasEvaluations
+    ? [{ key: "evaluations", label: "評價" }]
+    : []),
+];
+
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+---
+
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>{identity.name}｜三國人物誌</title>
+
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <link rel="icon" href={`${base}favicon.ico`} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class={`person-detail-page person-detail-page--${identity.faction}`}>
+    <SiteHeader referenceLibraryUrl="" />
+
+    <main>
+      <PersonHero identity={identity} />
+
+      <nav
+        class="person-tabs"
+        role="tablist"
+        aria-label={`${identity.name}人物資料`}
+      >
+        {
+          tabs.map((tab, index) => (
+            <button
+              class:list={["person-tab", { "is-active": index === 0 }]}
+              type="button"
+              role="tab"
+              aria-selected={index === 0 ? "true" : "false"}
+              aria-controls={`person-panel-${tab.key}`}
+              data-person-tab={tab.key}
+            >
+              {tab.label}
+            </button>
+          ))
+        }
+      </nav>
+
+      <div class="person-panels">
+        {
+          tabs.map((tab, index) => (
+            <section
+              id={`person-panel-${tab.key}`}
+              class="person-panel"
+              role="tabpanel"
+              data-person-panel={tab.key}
+              hidden={index !== 0}
+            >
+              <header class="person-panel__heading">
+                <p>三國人物誌</p>
+                <h2>{tab.label}</h2>
+              </header>
+
+              {tab.key === "overview" && (
+                <PersonOverview
+                  identity={identity}
+                  introParagraphs={parsed.introParagraphs}
+                  primaryIdentities={parsed.primaryIdentities}
+                  titlesAndRanks={parsed.titlesAndRanks}
+                  factionStages={parsed.factionStages}
+                  personLookup={personLookup}
+                />
+              )}
+
+              {tab.key === "historical" && (
+                <PersonBiography entries={parsed.historicalBio} />
+              )}
+
+              {tab.key === "romance" && (
+                <PersonBiography entries={parsed.romanceBio} isRomance />
+              )}
+
+              {tab.key === "relations" && (
+                <PersonRelations
+                  relations={parsed.relations}
+                  personLookup={personLookup}
+                />
+              )}
+
+              {tab.key === "works" && (
+                <PersonWorks works={parsed.works} note={parsed.worksNote} />
+              )}
+
+              {tab.key === "evaluations" && (
+                <PersonEvaluations
+                  contemporary={parsed.evaluations.contemporary}
+                  later={parsed.evaluations.later}
+                />
+              )}
+            </section>
+          ))
+        }
+      </div>
+    </main>
+
+    <script>
+      const tabButtons = Array.from(
+        document.querySelectorAll("[data-person-tab]"),
+      );
+
+      const tabPanels = Array.from(
+        document.querySelectorAll("[data-person-panel]"),
+      );
+
+      function activateTab(tabKey: string, updateHash = true) {
+        const targetButton = tabButtons.find(
+          (button) => button.getAttribute("data-person-tab") === tabKey,
+        );
+
+        if (!targetButton) {
+          return;
+        }
+
+        tabButtons.forEach((button) => {
+          const isActive = button === targetButton;
+
+          button.classList.toggle("is-active", isActive);
+          button.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
+
+        tabPanels.forEach((panel) => {
+          if (!(panel instanceof HTMLElement)) {
+            return;
+          }
+
+          panel.hidden = panel.dataset.personPanel !== tabKey;
+        });
+
+        if (updateHash) {
+          history.replaceState(null, "", `#${tabKey}`);
+        }
+      }
+
+      tabButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const tabKey = button.getAttribute("data-person-tab");
+
+          if (!tabKey) {
+            return;
+          }
+
+          activateTab(tabKey);
+        });
+      });
+
+      const initialTabKey = window.location.hash.replace("#", "");
+
+      if (initialTabKey) {
+        activateTab(initialTabKey, false);
+      }
+    </script>
+  </body>
+</html>
