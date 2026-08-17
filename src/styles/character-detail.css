@@ -1,0 +1,1745 @@
+/*
+ * 三國人物誌｜人物詳細頁
+ *
+ * 搭配：
+ * src/pages/character/[id].astro
+ * src/components/person/PersonHero.astro
+ * src/components/person/PersonOverview.astro
+ */
+
+
+/* ==============================
+   共用變數
+   ============================== */
+
+:root {
+  --person-paper: #dfd7c8;
+  --person-paper-light: #ece5d8;
+  --person-ink: #342d24;
+  --person-muted: #756c5f;
+  --person-cinnabar: #a24438;
+  --person-romance: #3f6e63;
+  --person-bronze: #ad8b49;
+  --person-line: rgba(99, 82, 57, 0.16);
+  --person-card-line: rgba(112, 91, 58, 0.18);
+
+  --person-display-font:
+    "Noto Serif TC",
+    "Songti TC",
+    serif;
+
+  --person-body-font:
+    "Noto Sans TC",
+    system-ui,
+    sans-serif;
+}
+
+
+/* ==============================
+   頁面與勢力配色
+   ============================== */
+
+.person-detail-page {
+  --person-tone: #68745c;
+  --person-tone-dark: #40513b;
+  --person-tone-light: #898e79;
+
+  /*
+   * 正文紙色會依照目前勢力染上一層很淡的顏色。
+   * 保留古籍紙張感，但降低原本偏亮白的感覺。
+   */
+  --person-paper:
+    color-mix(
+      in srgb,
+      var(--person-tone) 18%,
+      #d3c9b7
+    );
+
+  --person-paper-light:
+    color-mix(
+      in srgb,
+      var(--person-tone) 13%,
+      #e0d8c9
+    );
+
+  --person-line:
+    color-mix(
+      in srgb,
+      var(--person-tone) 32%,
+      #a99d88
+    );
+
+  --person-card-line:
+    color-mix(
+      in srgb,
+      var(--person-tone) 38%,
+      #a89a82
+    );
+
+  min-height: 100vh;
+  margin: 0;
+  color: var(--person-ink);
+  font-family: var(--person-body-font);
+  background:
+    radial-gradient(
+      ellipse 900px 520px at 92% 35%,
+      color-mix(
+        in srgb,
+        var(--person-tone) 24%,
+        transparent
+      ),
+      transparent 72%
+    ),
+    var(--person-paper);
+}
+
+.person-detail-page--wei {
+  --person-tone: #687985;
+  --person-tone-dark: #3c4f5b;
+  --person-tone-light: #858b88;
+}
+
+.person-detail-page--shu {
+  --person-tone: #68745c;
+  --person-tone-dark: #40513b;
+  --person-tone-light: #898e79;
+}
+
+.person-detail-page--wu {
+  --person-tone: #89564e;
+  --person-tone-dark: #6a3934;
+  --person-tone-light: #98786f;
+}
+
+.person-detail-page--donghan {
+  --person-tone: #6e5d78;
+  --person-tone-dark: #493c52;
+  --person-tone-light: #897e8c;
+}
+
+.person-detail-page--qunxiong {
+  --person-tone: #806441;
+  --person-tone-dark: #5d472b;
+  --person-tone-light: #928069;
+}
+
+.person-detail-page--jin {
+  --person-tone: #726b66;
+  --person-tone-dark: #4c4744;
+  --person-tone-light: #8c8580;
+}
+
+.person-detail-page main {
+  min-width: 0;
+}
+
+
+/* ==============================
+   人物卷首
+   ============================== */
+
+.person-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-height: 346px;
+  overflow: hidden;
+  color: #f3eee2;
+  background:
+    linear-gradient(
+      100deg,
+      var(--person-tone-dark) 0%,
+      var(--person-tone) 48%,
+      var(--person-tone-light) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(45, 36, 24, 0.12);
+}
+
+.person-hero::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background:
+    radial-gradient(
+      circle at 21% 38%,
+      rgba(255, 244, 210, 0.08),
+      transparent 31%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(18, 25, 18, 0.09),
+      transparent 38%,
+      rgba(245, 229, 188, 0.04)
+    );
+  pointer-events: none;
+}
+
+
+/* 背景勢力大字 */
+
+.person-hero__mark {
+  position: absolute;
+  top: 50%;
+  right: max(4vw, 44px);
+  z-index: -1;
+  color: rgba(248, 239, 214, 0.09);
+  font-family: var(--person-display-font);
+  font-size: clamp(190px, 21vw, 300px);
+  font-weight: 900;
+  line-height: 0.78;
+  transform: translateY(-48%);
+  user-select: none;
+  pointer-events: none;
+}
+
+.person-hero__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  align-items: center;
+  gap: 54px;
+  width: min(980px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 42px 0;
+}
+
+
+/* ==============================
+   金屬古銅頭像框
+   ============================== */
+
+.person-hero__portrait {
+  position: relative;
+  isolation: isolate;
+  width: 210px;
+  height: 210px;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px;
+  border: 0;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      from 215deg,
+      #4b2d0e 0deg,
+      #956323 36deg,
+      #e0b764 68deg,
+      #f5dda0 88deg,
+      #ad762c 122deg,
+      #5e390f 158deg,
+      #c99542 200deg,
+      #efd18a 236deg,
+      #86551c 282deg,
+      #c48f3b 326deg,
+      #4b2d0e 360deg
+    );
+  box-shadow:
+    0 0 0 1px rgba(54, 33, 10, 0.68),
+    0 9px 22px rgba(31, 27, 20, 0.28),
+    0 2px 7px rgba(25, 19, 10, 0.35),
+    inset 0 1px 1px rgba(255, 239, 191, 0.54),
+    inset 0 -2px 3px rgba(64, 37, 8, 0.58);
+}
+
+.person-hero__portrait::before {
+  position: absolute;
+  inset: 2px;
+  z-index: 2;
+  content: "";
+  border-radius: 50%;
+  background:
+    linear-gradient(
+      118deg,
+      transparent 20%,
+      rgba(255, 246, 207, 0.72) 32%,
+      rgba(255, 233, 169, 0.18) 39%,
+      transparent 48%
+    );
+  -webkit-mask:
+    radial-gradient(
+      circle,
+      transparent 0 90%,
+      #000 90.5% 100%
+    );
+  mask:
+    radial-gradient(
+      circle,
+      transparent 0 90%,
+      #000 90.5% 100%
+    );
+  pointer-events: none;
+}
+
+.person-hero__portrait::after {
+  position: absolute;
+  inset: 8px;
+  z-index: 3;
+  content: "";
+  border: 1px solid rgba(255, 226, 151, 0.45);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1px rgba(68, 43, 14, 0.62),
+    inset 0 0 10px rgba(28, 20, 10, 0.38);
+  pointer-events: none;
+}
+
+.person-hero__portrait img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+}
+
+
+/* ==============================
+   卷首文字
+   ============================== */
+
+.person-hero__content {
+  min-width: 0;
+}
+
+.person-hero__heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 18px 30px;
+}
+
+.person-hero__heading h1 {
+  margin: 0;
+  color: #f3e4c5;
+  font-family: var(--person-display-font);
+  font-size: clamp(48px, 6vw, 66px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.12;
+  text-shadow:
+    0 1px 0 rgba(255, 239, 197, 0.18),
+    0 4px 14px rgba(28, 23, 17, 0.24);
+}
+
+.person-hero__heading > p {
+  margin: 0;
+  color: rgba(246, 239, 223, 0.78);
+  font-family: var(--person-display-font);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.person-hero__summary {
+  max-width: 720px;
+  margin: 24px 0 0;
+  color: rgba(250, 246, 237, 0.86);
+  font-family: var(--person-display-font);
+  font-size: 14px;
+  line-height: 2;
+  letter-spacing: 0.045em;
+}
+
+.person-hero__birthplace {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.045em;
+}
+
+.person-hero__birthplace strong {
+  color: #e2bd68;
+  font-family: var(--person-display-font);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.person-hero__birthplace span {
+  color: rgba(249, 243, 229, 0.82);
+}
+
+.person-hero__facts {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin: 11px 0 0;
+}
+
+.person-hero__facts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.person-hero__facts dt {
+  color: #e2bd68;
+  font-family: var(--person-display-font);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.person-hero__facts dd {
+  margin: 0;
+  color: rgba(249, 243, 229, 0.82);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+
+/* ==============================
+   人物資料頁簽
+   ============================== */
+
+.person-tabs {
+  display: flex;
+  align-items: flex-end;
+  width: min(980px, calc(100% - 40px));
+  overflow-x: auto;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding-top: 18px;
+  border-bottom: 1px solid var(--person-line);
+  background: var(--person-paper);
+  scrollbar-width: thin;
+}
+
+.person-tab {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 120px;
+  padding: 16px 24px 15px;
+  color: #61594e;
+  font-family: var(--person-display-font);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(103, 84, 57, 0.18);
+  border-bottom: 0;
+  border-radius: 9px 9px 0 0;
+  background:
+    color-mix(
+      in srgb,
+      var(--person-tone) 18%,
+      #cec4b2
+    );
+  cursor: pointer;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.person-tab + .person-tab {
+  margin-left: 3px;
+}
+
+.person-tab:hover {
+  color: var(--person-cinnabar);
+  background:
+    color-mix(
+      in srgb,
+      var(--person-tone) 13%,
+      #ddd4c4
+    );
+}
+
+.person-tab.is-active {
+  color: #91392f;
+  border-color: rgba(115, 83, 54, 0.22);
+  background: var(--person-paper-light);
+  box-shadow:
+    inset 0 3px 0 var(--person-cinnabar);
+}
+
+.person-tab:focus-visible {
+  z-index: 2;
+  outline: 2px solid rgba(162, 68, 56, 0.6);
+  outline-offset: -3px;
+}
+
+
+/* ==============================
+   分頁內容共用骨架
+   ============================== */
+
+.person-panels {
+  width: min(980px, calc(100% - 40px));
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 28px 0 90px;
+}
+
+.person-panel[hidden] {
+  display: none;
+}
+
+.person-panel__heading {
+  margin-bottom: 23px;
+}
+
+.person-panel__heading > p {
+  margin: 0 0 7px;
+  color: var(--person-cinnabar);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.person-panel__heading > h2 {
+  margin: 0;
+  color: var(--person-ink);
+  font-family: var(--person-display-font);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.person-panel__placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 170px;
+  box-sizing: border-box;
+  padding: 30px;
+  color: #766d60;
+  border: 1px solid var(--person-card-line);
+  border-radius: 11px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.2),
+      transparent 60%
+    ),
+    color-mix(
+      in srgb,
+      var(--person-tone) 14%,
+      #dcd3c3
+    );
+}
+
+.person-panel__placeholder p {
+  margin: 0;
+  font-family: var(--person-display-font);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+
+/* ==============================
+   人物頁平板與手機版
+   ============================== */
+
+@media (max-width: 760px) {
+  .person-hero {
+    min-height: 0;
+  }
+
+  .person-hero__mark {
+    top: auto;
+    right: -8px;
+    bottom: 14px;
+    font-size: 170px;
+    transform: none;
+  }
+
+  .person-hero__inner {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 28px;
+    padding: 38px 0 42px;
+  }
+
+  .person-hero__portrait {
+    width: 184px;
+    height: 184px;
+  }
+
+  .person-hero__content {
+    width: 100%;
+    text-align: center;
+  }
+
+  .person-hero__heading {
+    justify-content: center;
+    gap: 10px 18px;
+  }
+
+  .person-hero__heading h1 {
+    font-size: 48px;
+  }
+
+  .person-hero__summary {
+    margin-top: 18px;
+    font-size: 13px;
+    line-height: 1.9;
+  }
+
+  .person-hero__birthplace,
+  .person-hero__facts {
+    justify-content: center;
+  }
+
+  .person-tabs {
+    width: 100%;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .person-tab {
+    min-width: 108px;
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .person-panels {
+    width: min(100% - 32px, 980px);
+    padding-top: 24px;
+  }
+}
+
+@media (max-width: 440px) {
+  .person-hero__inner {
+    width: min(100% - 30px, 980px);
+  }
+
+  .person-hero__heading {
+    display: block;
+  }
+
+  .person-hero__heading > p {
+    margin-top: 9px;
+  }
+
+  .person-hero__birthplace {
+    display: block;
+  }
+
+  .person-hero__birthplace strong,
+  .person-hero__birthplace span {
+    display: block;
+  }
+
+  .person-hero__birthplace span {
+    margin-top: 5px;
+    line-height: 1.7;
+  }
+
+  .person-hero__facts {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .person-panel__heading > h2 {
+    font-size: 27px;
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .person-tab {
+    transition: none;
+  }
+}
+
+
+/* ==============================
+   人物總覽
+   ============================== */
+
+.person-overview {
+  display: grid;
+  gap: 18px;
+}
+
+
+/* 共用卡片 */
+
+.person-overview__card,
+.person-overview__mini-card {
+  box-sizing: border-box;
+  border: 1px solid var(--person-card-line);
+  border-radius: 11px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.2),
+      transparent 58%
+    ),
+    color-mix(
+      in srgb,
+      var(--person-tone) 15%,
+      #ddd5c6
+    );
+  box-shadow:
+    0 8px 24px rgba(58, 49, 36, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.person-overview__card {
+  padding: 28px 30px;
+}
+
+
+/* 區塊標題 */
+
+.person-overview__section-heading {
+  margin-bottom: 20px;
+}
+
+.person-overview__section-heading > p,
+.person-overview__mini-card header > p {
+  margin: 0 0 5px;
+  color:
+    color-mix(
+      in srgb,
+      var(--person-tone) 72%,
+      #403429
+    );
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.person-overview__section-heading > h3,
+.person-overview__mini-card header > h3 {
+  margin: 0;
+  color: var(--person-ink);
+  font-family: var(--person-display-font);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+}
+
+.person-overview__section-heading > h3 {
+  font-size: 25px;
+}
+
+.person-overview__mini-card header > h3 {
+  font-size: 20px;
+}
+
+
+/* 人物介紹 */
+
+.person-overview__prose {
+  color: #5f574b;
+  font-family: var(--person-display-font);
+  font-size: 15px;
+  line-height: 2;
+  letter-spacing: 0.035em;
+}
+
+.person-overview__prose p {
+  margin: 0;
+}
+
+.person-overview__prose p + p {
+  margin-top: 12px;
+}
+
+
+/* 不確定性提醒 */
+
+.person-overview__notice {
+  margin-top: 20px;
+  padding: 14px 16px;
+  color: #756953;
+  border-left: 3px solid var(--person-bronze);
+  background: rgba(173, 139, 73, 0.08);
+}
+
+.person-overview__notice strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #8a682a;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+
+.person-overview__notice p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+
+/* 資料來源 */
+
+.person-overview__citations {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 22px;
+  padding-top: 15px;
+  border-top: 1px solid var(--person-line);
+}
+
+.person-overview__citations-label {
+  flex: 0 0 auto;
+  color: #8c7b5c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.person-overview__citations ul,
+.person-rank-list__sources,
+.person-service-stage__sources,
+.person-posthumous-detail__sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-overview__citations li,
+.person-rank-list__sources li,
+.person-service-stage__sources li,
+.person-posthumous-detail__sources li {
+  color: #817765;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.person-overview__citations a {
+  color: #795f2d;
+  text-decoration: none;
+}
+
+.person-overview__citations a:hover {
+  color: var(--person-cinnabar);
+}
+
+.person-overview__citations small,
+.person-rank-list__sources small,
+.person-service-stage__sources small,
+.person-posthumous-detail__sources small {
+  margin-left: 5px;
+  color: #aaa08d;
+}
+
+
+/* 主要身分與其他名稱 */
+
+.person-overview__summary-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(260px, 1fr)
+    );
+  gap: 18px;
+}
+
+.person-overview__mini-card {
+  padding: 23px 25px;
+}
+
+.person-overview__identity-list,
+.person-overview__name-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 17px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-overview__identity-list li {
+  padding: 7px 11px;
+  color:
+    color-mix(
+      in srgb,
+      var(--person-tone) 62%,
+      #3b3023
+    );
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--person-tone) 25%,
+      var(--person-card-line)
+    );
+  background:
+    color-mix(
+      in srgb,
+      var(--person-tone) 7%,
+      transparent
+    );
+}
+
+.person-overview__name-list li {
+  position: relative;
+  padding-left: 14px;
+  color: #62594c;
+  font-family: var(--person-display-font);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.person-overview__name-list li::before {
+  position: absolute;
+  top: 0.78em;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  content: "";
+  border-radius: 50%;
+  background: var(--person-bronze);
+}
+
+
+/* ==============================
+   官職與爵位
+   ============================== */
+
+.person-rank-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--person-line);
+}
+
+.person-rank-list__item {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 0.38fr)
+    minmax(0, 1fr);
+  gap: 26px;
+  padding: 20px 4px;
+  border-bottom: 1px solid var(--person-line);
+}
+
+.person-rank-list__period {
+  color: #8b7960;
+  font-size: 12px;
+  line-height: 1.8;
+  letter-spacing: 0.04em;
+}
+
+.person-rank-list__content h4 {
+  margin: 0;
+  color: #453a2d;
+  font-family: var(--person-display-font);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.person-rank-list__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 9px 0 0;
+}
+
+.person-rank-list__meta span {
+  padding: 3px 8px;
+  color: #796440;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(173, 139, 73, 0.24);
+  background: rgba(173, 139, 73, 0.06);
+}
+
+.person-rank-list__note {
+  margin: 10px 0 0;
+  color: #706759;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.person-rank-list__sources {
+  margin-top: 10px;
+}
+
+
+/* ==============================
+   所屬勢力與效力歷程
+   ============================== */
+
+.person-service-list {
+  display: grid;
+  gap: 13px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-service-group {
+  display: grid;
+  grid-template-columns:
+    minmax(145px, 0.32fr)
+    minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--person-tone) 42%,
+      var(--person-card-line)
+    );
+  border-radius: 9px;
+  background:
+    color-mix(
+      in srgb,
+      var(--person-tone) 7%,
+      rgba(239, 232, 218, 0.72)
+    );
+}
+
+
+/* 君主／效力對象 */
+
+.person-service-leader {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  gap: 13px;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 18px 17px;
+  color: #443b30;
+  border-right: 1px solid
+    color-mix(
+      in srgb,
+      var(--person-tone) 38%,
+      var(--person-line)
+    );
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(
+        in srgb,
+        var(--person-tone) 19%,
+        rgba(230, 220, 202, 0.76)
+      ),
+      color-mix(
+        in srgb,
+        var(--person-tone) 10%,
+        rgba(226, 216, 198, 0.7)
+      )
+    );
+}
+
+a.person-service-leader {
+  text-decoration: none;
+}
+
+.person-service-leader img {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  box-sizing: border-box;
+  border: 2px solid rgba(176, 137, 66, 0.68);
+  border-radius: 50%;
+  background: rgba(59, 50, 38, 0.16);
+  box-shadow:
+    0 0 0 1px rgba(76, 55, 25, 0.28),
+    0 4px 10px rgba(55, 45, 31, 0.12);
+  object-fit: cover;
+}
+
+.person-service-leader strong {
+  min-width: 0;
+  font-family: var(--person-display-font);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.person-service-leader__arrow {
+  margin-left: auto;
+  color: #967538;
+  font-size: 13px;
+  opacity: 0.76;
+  transition:
+    opacity 170ms ease,
+    transform 170ms ease;
+}
+
+a.person-service-leader.is-link {
+  transition:
+    color 170ms ease,
+    background 170ms ease;
+}
+
+a.person-service-leader.is-link:hover {
+  color:
+    color-mix(
+      in srgb,
+      var(--person-tone) 72%,
+      #32281f
+    );
+  background:
+    color-mix(
+      in srgb,
+      var(--person-tone) 24%,
+      rgba(231, 221, 203, 0.78)
+    );
+}
+
+a.person-service-leader.is-link:hover
+  .person-service-leader__arrow {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+
+a.person-service-leader.is-link:focus-visible {
+  outline: 2px solid var(--person-cinnabar);
+  outline-offset: -3px;
+}
+
+
+/* 效力階段 */
+
+.person-service-stages {
+  min-width: 0;
+  padding: 5px 20px;
+}
+
+.person-service-stage {
+  padding: 14px 2px;
+}
+
+.person-service-stage.has-divider {
+  border-top: 1px dashed
+    color-mix(
+      in srgb,
+      var(--person-tone) 34%,
+      var(--person-line)
+    );
+}
+
+.person-service-stage h4 {
+  margin: 0;
+  color:
+    color-mix(
+      in srgb,
+      var(--person-tone) 68%,
+      #3e3328
+    );
+  font-family: var(--person-display-font);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+}
+
+.person-service-stage__period {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 6px 0 0;
+  color: #766c5d;
+  font-size: 11px;
+  line-height: 1.65;
+  letter-spacing: 0.025em;
+}
+
+.person-service-stage__period small {
+  padding: 2px 7px;
+  color: #81652f;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  border: 1px solid rgba(151, 116, 52, 0.38);
+  border-radius: 999px;
+  background: rgba(173, 139, 73, 0.1);
+}
+
+.person-service-stage__description {
+  margin: 8px 0 0;
+  color: #6b6256;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.person-service-stage__sources {
+  margin-top: 8px;
+}
+
+@media (max-width: 680px) {
+  .person-service-group {
+    grid-template-columns: 1fr;
+  }
+
+  .person-service-leader {
+    padding: 14px 16px;
+    border-right: 0;
+    border-bottom: 1px solid
+      color-mix(
+        in srgb,
+        var(--person-tone) 38%,
+        var(--person-line)
+      );
+  }
+
+  .person-service-leader img {
+    width: 45px;
+    height: 45px;
+    flex-basis: 45px;
+  }
+
+  .person-service-stages {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}
+
+
+/* ==============================
+   諡號補充
+   ============================== */
+
+.person-posthumous-detail > strong {
+  display: block;
+  color: #8c6727;
+  font-family: var(--person-display-font);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.person-posthumous-detail dl {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(220px, 1fr)
+    );
+  gap: 12px 28px;
+  margin: 20px 0 0;
+}
+
+.person-posthumous-detail dl > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--person-line);
+}
+
+.person-posthumous-detail dt {
+  color: #8c7a5d;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.person-posthumous-detail dd {
+  margin: 0;
+  color: #5f5649;
+  font-size: 13px;
+}
+
+.person-posthumous-detail > p {
+  margin: 18px 0 0;
+  color: #6d6355;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.person-posthumous-detail__sources {
+  margin-top: 13px;
+}
+
+
+/* ==============================
+   人物總覽手機版
+   ============================== */
+
+@media (max-width: 680px) {
+  .person-overview__card {
+    padding: 23px 20px;
+  }
+
+  .person-overview__summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .person-rank-list__item {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .person-rank-list__period {
+    color: #9a7133;
+  }
+
+  .person-overview__citations {
+    flex-direction: column;
+    gap: 7px;
+  }
+}
+
+
+/* ==============================
+   親屬關係
+   ============================== */
+
+.person-relations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.person-relation-card {
+  display: flex;
+  flex-direction: column;
+
+  /*
+   * 每張卡片固定高度，切換史實／後世內文時卡片本身
+   * 跟同一列的其他卡片都不會跟著變高變矮，
+   * 內文太長就在卡片內部往下捲動查看。
+   */
+  height: 280px;
+
+  box-sizing: border-box;
+  padding: 22px 24px;
+  border: 1px solid var(--person-card-line);
+  border-radius: 11px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 58%),
+    color-mix(in srgb, var(--person-tone) 15%, #ddd5c6);
+  box-shadow: 0 8px 24px rgba(58, 49, 36, 0.13);
+}
+
+/* 人物名稱獨立一排，避免長名稱把標籤擠壓變形 */
+
+.person-relation-card__person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--person-ink);
+  text-decoration: none;
+}
+
+.person-relation-card__avatar {
+  display: block;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  box-sizing: border-box;
+  border: 2px solid rgba(176, 137, 66, 0.68);
+  border-radius: 50%;
+  background: rgba(59, 50, 38, 0.16);
+  object-fit: cover;
+}
+
+.person-relation-card__name {
+  font-family: var(--person-display-font);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.person-relation-card__person.is-link:hover {
+  color: var(--person-cinnabar);
+}
+
+/* 分類標籤（左）跟史實／後世標籤（右）同一排 */
+
+.person-relation-card__tags {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--person-line);
+}
+
+.person-relation-card__group {
+  padding: 3px 9px;
+  color: #796440;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(173, 139, 73, 0.24);
+  background: rgba(173, 139, 73, 0.08);
+}
+
+.person-relation-card__nature-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.person-relation-card__nature-tag {
+  padding: 3px 10px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  font-family: inherit;
+  border: 1px solid var(--person-card-line);
+  border-radius: 999px;
+  background: transparent;
+  cursor: default;
+}
+
+/* 史實／後世閒置時也各自帶一點顏色提示，不用點下去才看得出差異 */
+
+.person-relation-card__nature-tag--historical {
+  color: color-mix(in srgb, var(--person-cinnabar) 70%, #3b3023);
+  border-color: color-mix(in srgb, var(--person-cinnabar) 45%, var(--person-card-line));
+}
+
+.person-relation-card__nature-tag--romance {
+  color: color-mix(in srgb, var(--person-romance) 70%, #3b3023);
+  border-color: color-mix(in srgb, var(--person-romance) 45%, var(--person-card-line));
+}
+
+/* 兩層都有記載時，標籤才會變成可以點擊切換的按鈕 */
+
+button.person-relation-card__nature-tag {
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+button.person-relation-card__nature-tag--historical:hover {
+  border-color: var(--person-cinnabar);
+}
+
+button.person-relation-card__nature-tag--romance:hover {
+  border-color: var(--person-romance);
+}
+
+.person-relation-card__nature-tag--historical.is-active {
+  color: #fff;
+  border-color: var(--person-cinnabar);
+  background: var(--person-cinnabar);
+}
+
+.person-relation-card__nature-tag--romance.is-active {
+  color: #fff;
+  border-color: var(--person-romance);
+  background: var(--person-romance);
+}
+
+.person-relation-card__content {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+  padding-right: 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* 捲到底／頂之後，滑鼠滾輪不要再往外帶動整個人物頁面 */
+  overscroll-behavior: contain;
+
+  /* Firefox：只留一條細細的捲軸，軌道透明、拇指用卡片同色系 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--person-bronze) transparent;
+}
+
+/* Chrome／Safari／Edge：拿掉白色軌道，只留同色系細捲軸 */
+
+.person-relation-card__content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.person-relation-card__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.person-relation-card__content::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--person-bronze) 65%, transparent);
+  border-radius: 999px;
+}
+
+.person-relation-card__content::-webkit-scrollbar-thumb:hover {
+  background: var(--person-bronze);
+}
+
+.person-relation-card__layer-text {
+  margin: 0;
+  color: #5f574b;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.person-relation-card__layer-text[hidden] {
+  display: none;
+}
+
+
+/* ==============================
+   人物評價
+   ============================== */
+
+.person-evaluation-list {
+  display: grid;
+  gap: 18px;
+}
+
+.person-evaluation {
+  margin: 0;
+  padding: 4px 0 4px 20px;
+  border-left: 3px solid var(--person-bronze);
+}
+
+.person-evaluation__quote {
+  margin: 0;
+  color: var(--person-ink);
+  font-family: var(--person-display-font);
+  font-size: 16px;
+  line-height: 1.9;
+  letter-spacing: 0.03em;
+}
+
+.person-evaluation__evaluator {
+  margin: 8px 0 0;
+  color: #8c7a5d;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.person-evaluation__context {
+  margin: 10px 0 0;
+  color: #6d6355;
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+
+/* ==============================
+   史實／演義生平
+   ============================== */
+
+.person-biography-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-biography-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 20px;
+  padding-bottom: 30px;
+}
+
+.person-biography-entry:last-child {
+  padding-bottom: 0;
+}
+
+.person-biography-entry__track {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.person-biography-entry__track::before {
+  position: absolute;
+  top: 6px;
+  bottom: -24px;
+  width: 1px;
+  content: "";
+  background: var(--person-line);
+}
+
+.person-biography-entry__track span {
+  position: relative;
+  z-index: 1;
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--person-cinnabar);
+  box-shadow: 0 0 0 3px var(--person-paper-light);
+}
+
+.person-biography-list--romance .person-biography-entry__track span {
+  background: var(--person-romance);
+}
+
+.person-biography-entry__content {
+  box-sizing: border-box;
+  padding: 20px 24px;
+  border: 1px solid var(--person-card-line);
+  border-radius: 11px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 58%),
+    color-mix(in srgb, var(--person-tone) 12%, #e0d8c9);
+}
+
+.person-biography-entry__period {
+  color: #8b7960;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.person-biography-entry__content h4 {
+  margin: 6px 0 12px;
+  color: #453a2d;
+  font-family: var(--person-display-font);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.person-biography-entry__original {
+  margin-top: 14px;
+  padding: 12px 14px;
+  color: #5f574b;
+  font-size: 13px;
+  line-height: 1.9;
+  border: 1px solid var(--person-line);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.person-biography-entry__original summary {
+  color: #795f2d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.person-biography-entry__original p {
+  margin: 10px 0 0;
+  font-family: var(--person-display-font);
+}
+
+.person-biography-entry__difference {
+  border-left-color: var(--person-cinnabar);
+}
+
+@media (max-width: 680px) {
+  .person-relations {
+    grid-template-columns: 1fr;
+  }
+
+  .person-biography-entry {
+    grid-template-columns: 14px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .person-biography-entry__content {
+    padding: 16px 18px;
+  }
+}
+
+
+/* ==============================
+   著作
+   ============================== */
+
+.person-works__note {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  color: #756953;
+  font-size: 13px;
+  line-height: 1.8;
+  border-left: 3px solid var(--person-bronze);
+  background: rgba(173, 139, 73, 0.08);
+}
+
+.person-works-list {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-work-card {
+  box-sizing: border-box;
+  padding: 22px 24px;
+  border: 1px solid var(--person-card-line);
+  border-radius: 11px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 58%),
+    color-mix(in srgb, var(--person-tone) 15%, #ddd5c6);
+  box-shadow: 0 8px 24px rgba(58, 49, 36, 0.13);
+}
+
+.person-work-card__header h4 {
+  margin: 0;
+  color: #453a2d;
+  font-family: var(--person-display-font);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.person-work-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 9px 0 0;
+}
+
+.person-work-card__meta span {
+  padding: 3px 8px;
+  color: #796440;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(173, 139, 73, 0.24);
+  background: rgba(173, 139, 73, 0.06);
+}
+
+.person-work-card .person-overview__prose {
+  margin-top: 14px;
+}
+
+.person-work-card__excerpt {
+  margin: 14px 0 0;
+  padding: 4px 0 4px 16px;
+  color: var(--person-ink);
+  font-family: var(--person-display-font);
+  font-size: 14px;
+  line-height: 1.8;
+  border-left: 3px solid var(--person-bronze);
+}
+
+.person-work-card__original {
+  margin-top: 14px;
+  padding: 12px 14px;
+  color: #5f574b;
+  font-size: 13px;
+  line-height: 1.9;
+  border: 1px solid var(--person-line);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.person-work-card__original summary {
+  color: #795f2d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.person-work-card__original p {
+  margin: 10px 0 0;
+  font-family: var(--person-display-font);
+}
+
+@media (max-width: 680px) {
+  .person-work-card {
+    padding: 18px 18px;
+  }
+}
