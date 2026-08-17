@@ -127,9 +127,13 @@ const base =
       </div>
 
 
-      <p class="person-hero__summary">
-        {identity.summary}
-      </p>
+      {
+        identity.summary.map((paragraph) => (
+          <p class="person-hero__summary">
+            {paragraph}
+          </p>
+        ))
+      }
 
 
       <!-- 籍貫獨立顯示 -->
