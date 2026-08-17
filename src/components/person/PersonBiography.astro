@@ -1,0 +1,64 @@
+---
+import type { ParsedBiographyEntry } from "../../lib/parsePersonBody";
+
+interface Props {
+  entries: ParsedBiographyEntry[];
+
+  /** 是否為演義生平（要顯示「與史實的差異」區塊） */
+  isRomance?: boolean;
+}
+
+const { entries, isRomance = false } = Astro.props;
+---
+
+<ol
+  class:list={[
+    "person-biography-list",
+    { "person-biography-list--romance": isRomance },
+  ]}
+>
+  {
+    entries.map((entry) => (
+      <li class="person-biography-entry">
+        <div class="person-biography-entry__track" aria-hidden="true">
+          <span />
+        </div>
+
+        <article class="person-biography-entry__content">
+          <div class="person-biography-entry__meta">
+            <span class="person-biography-entry__period">{entry.period}</span>
+          </div>
+
+          <h4>{entry.title}</h4>
+
+          <div class="person-overview__prose">
+            {entry.paragraphs.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+          </div>
+
+          {entry.uncertaintyNote && (
+            <aside class="person-overview__notice">
+              <strong>年代備註</strong>
+              <p>{entry.uncertaintyNote}</p>
+            </aside>
+          )}
+
+          {entry.originalText && (
+            <details class="person-biography-entry__original">
+              <summary>展開原文</summary>
+              <p>{entry.originalText}</p>
+            </details>
+          )}
+
+          {isRomance && entry.historicalDifference && (
+            <aside class="person-overview__notice person-biography-entry__difference">
+              <strong>與史實的差異</strong>
+              <p>{entry.historicalDifference}</p>
+            </aside>
+          )}
+        </article>
+      </li>
+    ))
+  }
+</ol>
