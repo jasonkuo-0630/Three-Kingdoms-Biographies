@@ -1,0 +1,173 @@
+---
+import type {
+  PersonIdentity,
+} from "../../types/person";
+
+import {
+  getFactionById,
+} from "../../data/factions";
+
+
+interface Props {
+  identity: PersonIdentity;
+}
+
+
+const {
+  identity,
+} = Astro.props;
+
+
+const faction =
+  getFactionById(
+    identity.faction,
+  );
+
+
+const factionMark =
+  faction?.mark ??
+  "漢";
+
+
+const courtesyNameDisplay =
+  identity.courtesyName
+    ? `字${identity.courtesyName}`
+    : "字號未詳";
+
+
+const originalCourtesyNameDisplay =
+  identity.originalCourtesyName
+    ? `，本字${identity.originalCourtesyName}`
+    : "";
+
+
+const extraNameParts = [
+  identity.childhoodName
+    ? `幼名${identity.childhoodName}`
+    : null,
+
+  identity.artName
+    ? `號${identity.artName}`
+    : null,
+].filter(Boolean);
+
+
+const extraNamesDisplay =
+  extraNameParts.length > 0
+    ? extraNameParts.join("，")
+    : "";
+
+
+const lifespanDisplay =
+  identity.lifespan ??
+  "不詳";
+
+
+const birthplaceDisplay =
+  identity.birthplace ??
+  "不詳";
+
+
+const posthumousTitleDisplay =
+  identity.posthumousTitle?.title ??
+  "未記載";
+
+
+const base =
+  import.meta.env.BASE_URL.replace(
+    /\/?$/,
+    "/",
+  );
+---
+
+
+<section
+  class="person-hero"
+  aria-labelledby="person-name"
+>
+  <!-- 背景勢力大字 -->
+
+  <span
+    class="person-hero__mark"
+    aria-hidden="true"
+  >
+    {factionMark}
+  </span>
+
+
+  <div class="person-hero__inner">
+    <!-- 人物頭像 -->
+
+    <figure class="person-hero__portrait">
+      <img
+        src={`${base}${identity.avatar}`}
+        alt={`${identity.name}人物頭像`}
+      />
+    </figure>
+
+
+    <!-- 人物資料 -->
+
+    <div class="person-hero__content">
+      <div class="person-hero__heading">
+        <h1 id="person-name">
+          {identity.name}
+        </h1>
+
+        <p>
+          {courtesyNameDisplay}
+          {originalCourtesyNameDisplay}
+        </p>
+
+        {extraNamesDisplay && (
+          <p>
+            {extraNamesDisplay}
+          </p>
+        )}
+      </div>
+
+
+      <p class="person-hero__summary">
+        {identity.summary}
+      </p>
+
+
+      <!-- 籍貫獨立顯示 -->
+
+      <p class="person-hero__birthplace">
+        <strong>
+          籍貫
+        </strong>
+
+        <span>
+          {birthplaceDisplay}
+        </span>
+      </p>
+
+
+      <!-- 生卒年與諡號 -->
+
+      <dl class="person-hero__facts">
+        <div>
+          <dt>
+            生卒年
+          </dt>
+
+          <dd>
+            {lifespanDisplay}
+          </dd>
+        </div>
+
+        <div>
+          <dt>
+            諡號
+          </dt>
+
+          <dd>
+            {posthumousTitleDisplay}
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</section>
