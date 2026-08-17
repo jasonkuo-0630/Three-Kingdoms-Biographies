@@ -1,0 +1,505 @@
+---
+import {
+  getCollection,
+  type CollectionEntry,
+} from "astro:content";
+
+import SiteHeader from "../../components/SiteHeader.astro";
+
+import "../../styles/faction-overview.css";
+
+import {
+  factions,
+  type FactionMeta,
+} from "../../data/factions";
+
+
+interface PageProps {
+  factionData: FactionMeta;
+}
+
+
+/**
+ * 使用同一份頁面產生五個勢力網址：
+ *
+ * /faction/wei/
+ * /faction/shu/
+ * /faction/wu/
+ * /faction/donghan/
+ * /faction/qunxiong/
+ */
+export function getStaticPaths() {
+  return factions.map(
+    (factionData) => ({
+      params: {
+        faction: factionData.id,
+      },
+
+      props: {
+        factionData,
+      },
+    }),
+  );
+}
+
+
+const {
+  factionData,
+} = Astro.props as PageProps;
+
+
+/**
+ * 自動取得當前勢力人物。
+ *
+ * 改讀 src/content/people/*.md（content collection），
+ * 不再依賴舊的 src/data/people/*.ts。
+ */
+const allPeople: CollectionEntry<"people">[] =
+  await getCollection("people");
+
+const people = allPeople
+  .filter(
+    (person: CollectionEntry<"people">) =>
+      person.data.faction === factionData.id,
+  )
+  .sort(
+    (
+      firstPerson: CollectionEntry<"people">,
+      secondPerson: CollectionEntry<"people">,
+    ) =>
+      firstPerson.data.name.localeCompare(
+        secondPerson.data.name,
+        "zh-Hant",
+      ),
+  );
+
+
+/**
+ * 建立人物可搜尋文字（姓名、字、本字、幼名、號、其他名稱）。
+ */
+function getPersonSearchText(
+  person: CollectionEntry<"people">,
+) {
+  const {
+    name,
+    courtesyName,
+    originalCourtesyName,
+    childhoodName,
+    artName,
+    otherNames = [],
+  } = person.data;
+
+  return [
+    name,
+    courtesyName,
+    originalCourtesyName,
+    childhoodName,
+    artName,
+    ...otherNames,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+
+/**
+ * GitHub Pages 網站根路徑。
+ */
+const base =
+  import.meta.env.BASE_URL.replace(
+    /\/?$/,
+    "/",
+  );
+---
+
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>
+      {factionData.name}人物總覽｜三國人物誌
+    </title>
+
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href={`${base}favicon.svg`}
+    />
+
+    <link
+      rel="icon"
+      href={`${base}favicon.ico`}
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body
+    class={`faction-overview-page faction-overview-page--${factionData.id}`}
+  >
+    <SiteHeader
+      referenceLibraryUrl=""
+    />
+
+    <main>
+      <!-- 頁面位置 -->
+
+      <nav
+        class="faction-breadcrumb"
+        aria-label="頁面位置"
+      >
+        <a href={base}>
+          首頁
+        </a>
+
+        <span aria-hidden="true">
+          ／
+        </span>
+
+        <span>
+          {factionData.name}人物總覽
+        </span>
+      </nav>
+
+
+      <!-- 勢力橫幅 -->
+
+      <header class="faction-overview-banner">
+        <span
+          class="faction-overview-banner__mark"
+          aria-hidden="true"
+        >
+          {factionData.mark}
+        </span>
+
+        <div class="faction-overview-banner__copy">
+          <p>
+            勢力人物總覽
+          </p>
+
+          <h1>
+            {factionData.name}
+          </h1>
+
+          <blockquote>
+            {factionData.overviewMotto}
+          </blockquote>
+        </div>
+
+        <p class="faction-overview-banner__count">
+          已收錄
+
+          <strong>
+            {people.length}
+          </strong>
+
+          人
+        </p>
+      </header>
+
+
+      <!-- 當前勢力人物搜尋 -->
+
+      <section
+        class="faction-list-tools"
+        aria-label={`${factionData.name}人物搜尋`}
+      >
+        <div class="faction-list-search">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle
+              cx="11"
+              cy="11"
+              r="7"
+            />
+
+            <line
+              x1="21"
+              y1="21"
+              x2="16.65"
+              y2="16.65"
+            />
+          </svg>
+
+          <label
+            class="sr-only"
+            for="faction-person-search"
+          >
+            搜尋{factionData.name}人物姓名或字號
+          </label>
+
+          <input
+            id="faction-person-search"
+            type="search"
+            placeholder={`搜尋${factionData.name}人物姓名或字號……`}
+            autocomplete="off"
+            data-faction-search
+          />
+        </div>
+
+        <button
+          class="faction-list-clear"
+          type="button"
+          data-clear-search
+        >
+          清除搜尋
+        </button>
+      </section>
+
+
+      <!-- 搜尋結果數量 -->
+
+      <p
+        class="faction-list-count"
+        aria-live="polite"
+        data-result-count
+      >
+        共 {people.length} 位人物
+      </p>
+
+
+      <!-- 人物竹簡列表 -->
+
+      <section
+        class="faction-person-list"
+        aria-label={`${factionData.name}人物列表`}
+      >
+        {
+          people.map(
+            (person) => {
+              const {
+                data: identity,
+              } = person;
+
+              return (
+                <a class="faction-person-slip"
+                  href={`${base}character/${identity.id}/`}
+                  aria-label={`查看${identity.name}的人物介紹`}
+                  data-person-row
+                  data-search-text={getPersonSearchText(person)}
+                >
+                  <span
+                    class="faction-person-slip__accent"
+                    aria-hidden="true"
+                  />
+
+                  <span class="faction-person-slip__avatar">
+                    <img
+                      src={`${base}${identity.avatar}`}
+                      alt={`${identity.name}頭像`}
+                      loading="lazy"
+                    />
+                  </span>
+
+                  <span class="faction-person-slip__identity">
+                    <strong>
+                      {identity.name}
+                    </strong>
+
+                    {
+                      identity.courtesyName && (
+                        <span>
+                          字 {identity.courtesyName}
+                        </span>
+                      )
+                    }
+
+                    {
+                      !identity.courtesyName && (
+                        <span>
+                          字號未詳
+                        </span>
+                      )
+                    }
+                  </span>
+
+                  <span class="faction-person-slip__action">
+                    查看人物
+
+                    <span aria-hidden="true">
+                      →
+                    </span>
+                  </span>
+                </a>
+              );
+            },
+          )
+        }
+      </section>
+
+
+      <!-- 無搜尋結果 -->
+
+      <p
+        class="faction-list-empty"
+        hidden
+        data-empty-state
+      >
+        沒有符合姓名或字號的人物。
+      </p>
+    </main>
+
+
+    <script>
+      const searchInput =
+        document.querySelector(
+          "[data-faction-search]",
+        );
+
+      const clearButton =
+        document.querySelector(
+          "[data-clear-search]",
+        );
+
+      const resultCount =
+        document.querySelector(
+          "[data-result-count]",
+        );
+
+      const emptyState =
+        document.querySelector(
+          "[data-empty-state]",
+        );
+
+      const personRows = Array.from(
+        document.querySelectorAll(
+          "[data-person-row]",
+        ),
+      );
+
+
+      /**
+       * 依照搜尋文字更新人物列表。
+       */
+      function updatePersonList() {
+        if (
+          !(
+            searchInput instanceof
+            HTMLInputElement
+          )
+        ) {
+          return;
+        }
+
+        const keyword =
+          searchInput.value
+            .trim()
+            .toLowerCase();
+
+        let visibleCount = 0;
+
+        personRows.forEach(
+          (row) => {
+            if (
+              !(
+                row instanceof
+                HTMLElement
+              )
+            ) {
+              return;
+            }
+
+            const searchText =
+              row.dataset.searchText
+                ?.toLowerCase() ?? "";
+
+            const isVisible =
+              !keyword ||
+              searchText.includes(
+                keyword,
+              );
+
+            row.hidden =
+              !isVisible;
+
+            if (isVisible) {
+              visibleCount += 1;
+            }
+          },
+        );
+
+        if (resultCount) {
+          resultCount.textContent =
+            `共 ${visibleCount} 位人物`;
+        }
+
+        if (
+          emptyState instanceof
+          HTMLElement
+        ) {
+          emptyState.hidden =
+            visibleCount !== 0;
+        }
+      }
+
+
+      /**
+       * 輸入搜尋文字時即時篩選。
+       */
+      searchInput?.addEventListener(
+        "input",
+        updatePersonList,
+      );
+
+
+      /**
+       * 清除搜尋並恢復全部人物。
+       */
+      clearButton?.addEventListener(
+        "click",
+        () => {
+          if (
+            !(
+              searchInput instanceof
+              HTMLInputElement
+            )
+          ) {
+            return;
+          }
+
+          searchInput.value = "";
+
+          updatePersonList();
+
+          searchInput.focus();
+        },
+      );
+
+
+      /**
+       * 頁面初次開啟時執行一次。
+       *
+       * 如果當前勢力沒有任何人物，
+       * 便會立即顯示空白狀態。
+       */
+      updatePersonList();
+    </script>
+  </body>
+</html>
