@@ -2,16 +2,24 @@
  * 勢力人物總覽
  * 與 src/pages/faction/[faction].astro 搭配使用
  *
- * 保留新版設計，
- * 僅沿用舊專案的整頁背景色與人物竹簡配色。
+ * 原本整頁背景沿用舊專案的暗色竹簡配色，跟人物詳細頁（亮色宣紙）
+ * 反差太大，兩個頁面點過去感覺像換了一個網站。這一版把「整頁底色」
+ * 改成跟人物詳細頁同一家族的亮色宣紙，勢力分色（--faction-color／
+ * --legacy-tone）本身完全不動——顏色識別保留，只是把「畫在暗底」
+ * 改成「畫在亮底」。
+ *
+ * 勢力橫幅（.faction-overview-banner）維持原本較深、較濃郁的配色，
+ * 跟人物詳細頁的卷首（.person-hero）是同一種設計邏輯：整頁是亮的，
+ * 但最上面那塊招牌／卷首用深色勢力主題色壓陣、白字，兩個頁面因此
+ * 共用同一套「亮頁面＋深色卷首」的視覺語言。
  */
 
 :root {
-  --overview-background: #17140f;
-  --overview-text: #eee8dc;
-  --overview-muted: #aaa08e;
-  --overview-bronze: #c4a269;
-  --overview-line: rgba(215, 195, 156, 0.18);
+  --overview-background: #d3c9b7;
+  --overview-text: #342d24;
+  --overview-muted: #756c5f;
+  --overview-bronze: #a3803f;
+  --overview-line: rgba(112, 91, 58, 0.22);
 
   --overview-display-font:
     "Noto Serif TC",
@@ -35,7 +43,10 @@
    * 新版橫幅與一般介面使用。
    *
    * --legacy-tone：
-   * 舊版整頁背景與竹簡使用。
+   * 整頁背景與竹簡使用。
+   *
+   * 五個勢力的色相跟舊版完全一樣，這裡沒有改動，
+   * 改的只有「這些顏色被混進亮底還是暗底」。
    */
 
   --faction-color: #647b5d;
@@ -48,7 +59,10 @@
   font-family: var(--overview-body-font);
 
   /*
-   * 舊專案的整頁背景混色方式。
+   * 整頁底色：跟人物詳細頁的 --person-paper 用同一種算法
+   * （勢力色淡淡混進亮色宣紙），維持同一個色彩家族。
+   * 上面疊一層很淡的勢力色暈染，保留原本「頁面正中央
+   * 有一團光暈」的氛圍。
    */
 
   background:
@@ -56,15 +70,15 @@
       ellipse 1600px 900px at 50% 0%,
       color-mix(
         in srgb,
-        var(--legacy-tone) 18%,
+        var(--legacy-tone) 14%,
         transparent
       ),
       transparent 75%
     ),
     color-mix(
       in srgb,
-      var(--legacy-tone) 26%,
-      black
+      var(--legacy-tone) 18%,
+      #d3c9b7
     );
 }
 
@@ -172,6 +186,16 @@
    ============================== */
 
 .faction-overview-banner {
+  /*
+   * 橫幅維持原本深色、濃郁的勢力配色，
+   * 在這裡局部覆寫回「亮字配深底」的版本，
+   * 底下這幾個元素（麵包屑之外、橫幅以內的文字）
+   * 就會自動沿用這組覆寫值，不用逐一改寫每條規則。
+   */
+  --overview-text: #eee8dc;
+  --overview-muted: #aaa08e;
+  --overview-bronze: #c4a269;
+
   position: relative;
   isolation: isolate;
   display: flex;
@@ -184,7 +208,7 @@
     color-mix(
       in srgb,
       var(--faction-color) 55%,
-      var(--overview-line)
+      rgba(215, 195, 156, 0.18)
     );
   background:
     linear-gradient(
@@ -336,7 +360,7 @@
   border: 1px solid var(--overview-line);
   border-radius: 2px;
   outline: none;
-  background: rgba(31, 27, 21, 0.9);
+  background: rgba(255, 251, 240, 0.55);
   transition:
     border-color 180ms ease,
     background-color 180ms ease,
@@ -344,7 +368,7 @@
 }
 
 .faction-list-search input::placeholder {
-  color: #81796b;
+  color: #8c8064;
 }
 
 .faction-list-search input:focus {
@@ -354,7 +378,7 @@
       var(--faction-color) 72%,
       var(--overview-bronze)
     );
-  background: rgba(38, 33, 25, 0.96);
+  background: rgba(255, 251, 240, 0.85);
   box-shadow:
     0 0 0 3px
       color-mix(
@@ -366,7 +390,7 @@
 
 .faction-list-search input::-webkit-search-cancel-button {
   cursor: pointer;
-  filter: invert(0.75);
+  opacity: 0.6;
 }
 
 .faction-list-clear {
@@ -378,7 +402,7 @@
   border: 1px solid var(--overview-line);
   border-radius: 2px;
   cursor: pointer;
-  background: rgba(31, 27, 21, 0.9);
+  background: rgba(255, 251, 240, 0.55);
   transition:
     color 180ms ease,
     border-color 180ms ease,
@@ -387,8 +411,8 @@
 
 .faction-list-clear:hover {
   color: var(--overview-bronze);
-  border-color: rgba(196, 162, 105, 0.48);
-  background: rgba(47, 39, 28, 0.95);
+  border-color: rgba(163, 128, 63, 0.48);
+  background: rgba(255, 251, 240, 0.85);
 }
 
 .faction-list-count {
@@ -410,8 +434,9 @@
 
 
 /*
- * 竹簡外觀沿用舊專案配色，
- * 尺寸、排版與 Hover 動畫維持新版設計。
+ * 竹簡外觀從「暗底浮雕」改成「亮底浮雕」：
+ * 卡片本身比頁面底色再亮一階，維持原本「竹簡浮在頁面上」
+ * 的立體感，尺寸、排版與 Hover 動畫維持不變。
  */
 
 .faction-person-slip {
@@ -429,44 +454,40 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--legacy-tone) 38%,
-      rgba(236, 220, 190, 0.08)
+      var(--legacy-tone) 30%,
+      rgba(112, 91, 58, 0.16)
     );
   border-radius: 2px;
-
-  /*
-   * 舊專案竹簡漸層。
-   */
 
   background:
     linear-gradient(
       90deg,
       color-mix(
         in srgb,
-        var(--legacy-tone) 46%,
-        #14100c
+        var(--legacy-tone) 28%,
+        #f2e9d6
       ),
       color-mix(
         in srgb,
-        var(--legacy-tone) 22%,
-        #14100c
+        var(--legacy-tone) 15%,
+        #f2e9d6
       ) 60%,
       color-mix(
         in srgb,
-        var(--legacy-tone) 14%,
-        #14100c
+        var(--legacy-tone) 9%,
+        #f2e9d6
       ) 100%
     ),
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.03),
-      rgba(255, 255, 255, 0.01)
+      rgba(255, 255, 255, 0.4),
+      rgba(255, 255, 255, 0.05)
     );
 
   box-shadow:
-    inset 0 1px 0 rgba(255, 246, 222, 0.07),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.46),
-    0 4px 12px rgba(0, 0, 0, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(61, 49, 30, 0.22),
+    0 4px 12px rgba(61, 49, 30, 0.14);
 
   transition:
     transform 220ms ease,
@@ -481,14 +502,14 @@
     color-mix(
       in srgb,
       var(--legacy-tone) 55%,
-      #d7c69f
+      #8a6a34
     );
-  filter: brightness(1.08);
+  filter: brightness(1.03);
   transform: translateX(5px) translateY(-2px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 246, 222, 0.1),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    -5px 8px 22px rgba(0, 0, 0, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(61, 49, 30, 0.24),
+    -5px 8px 22px rgba(61, 49, 30, 0.2);
 }
 
 .faction-person-slip:focus-visible {
@@ -497,11 +518,11 @@
     color-mix(
       in srgb,
       var(--legacy-tone) 55%,
-      #d7c69f
+      #8a6a34
     );
   outline: 2px solid var(--overview-bronze);
   outline-offset: 3px;
-  filter: brightness(1.08);
+  filter: brightness(1.03);
   transform: translateX(5px) translateY(-2px);
 }
 
@@ -515,7 +536,7 @@
   background: var(--legacy-tone);
   opacity: 0.7;
   box-shadow:
-    1px 0 0 rgba(255, 255, 255, 0.08),
+    1px 0 0 rgba(255, 255, 255, 0.3),
     4px 0 12px
       color-mix(
         in srgb,
@@ -543,10 +564,10 @@
   width: 58px;
   height: 58px;
   overflow: hidden;
-  border: 1px solid rgba(220, 201, 161, 0.32);
+  border: 1px solid rgba(120, 98, 60, 0.32);
   border-radius: 50%;
-  background: #181510;
-  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.28);
+  background: #e7dcc3;
+  box-shadow: 0 3px 9px rgba(61, 49, 30, 0.22);
 }
 
 .faction-person-slip__avatar img {
@@ -568,7 +589,7 @@
 }
 
 .faction-person-slip__identity strong {
-  color: #f3ede1;
+  color: var(--overview-text);
   font-family: var(--overview-display-font);
   font-size: 22px;
   font-weight: 600;
@@ -651,7 +672,7 @@
   text-align: center;
   letter-spacing: 0.08em;
   border: 1px dashed var(--overview-line);
-  background: rgba(29, 25, 20, 0.72);
+  background: rgba(255, 251, 240, 0.4);
 }
 
 
