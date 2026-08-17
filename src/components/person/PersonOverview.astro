@@ -2,6 +2,7 @@
 import type {
   ParsedTitleAndRank,
   ParsedFactionStage,
+  ParsedParagraph,
 } from "../../lib/parsePersonBody";
 
 
@@ -26,7 +27,7 @@ export interface PersonLookupEntry {
 
 interface Props {
   identity: OverviewIdentity;
-  introParagraphs: string[];
+  introParagraphs: ParsedParagraph[];
   primaryIdentities: string[];
   titlesAndRanks: ParsedTitleAndRank[];
   factionStages: ParsedFactionStage[];
@@ -109,7 +110,20 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
 
         <div class="person-overview__prose">
           {introParagraphs.map((paragraph) => (
-            <p>{paragraph}</p>
+            <>
+              <p>{paragraph.text}</p>
+
+              {paragraph.citations.length > 0 && (
+                <ul class="person-rank-list__sources person-paragraph-citations">
+                  {paragraph.citations.map((citation) => (
+                    <li>
+                      {citation.source}
+                      {citation.locator && <small>{citation.locator}</small>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           ))}
         </div>
       </section>
