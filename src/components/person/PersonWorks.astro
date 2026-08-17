@@ -1,0 +1,56 @@
+---
+import type { ParsedWork } from "../../lib/parsePersonBody";
+
+interface Props {
+  works: ParsedWork[];
+  note?: string;
+}
+
+const { works, note } = Astro.props;
+---
+
+<div class="person-works">
+  {
+    note && (
+      <p class="person-works__note">{note}</p>
+    )
+  }
+
+  <ol class="person-works-list">
+    {
+      works.map((work) => (
+        <li class="person-work-card">
+          <header class="person-work-card__header">
+            <h4>{work.title}</h4>
+
+            {(work.type || work.extant) && (
+              <p class="person-work-card__meta">
+                {work.type && <span>{work.type}</span>}
+                {work.extant && <span>{work.extant}</span>}
+              </p>
+            )}
+          </header>
+
+          {work.summaryParagraphs.length > 0 && (
+            <div class="person-overview__prose">
+              {work.summaryParagraphs.map((paragraph) => (
+                <p>{paragraph}</p>
+              ))}
+            </div>
+          )}
+
+          {work.excerpt && (
+            <p class="person-work-card__excerpt">「{work.excerpt}」</p>
+          )}
+
+          {work.originalText && (
+            <details class="person-work-card__original">
+              <summary>展開原文（約{work.originalText.length}字）</summary>
+              <p>{work.originalText}</p>
+            </details>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</div>
