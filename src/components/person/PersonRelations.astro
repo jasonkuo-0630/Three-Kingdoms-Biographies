@@ -1,0 +1,175 @@
+---
+import type { ParsedRelation } from "../../lib/parsePersonBody";
+
+interface Props {
+  relations: ParsedRelation[];
+  personLookup: Map<string, { name: string; avatar: string }>;
+}
+
+const { relations, personLookup } = Astro.props;
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+---
+
+<div class="person-relations">
+  {
+    relations.map((relation) => {
+      const target = relation.targetId
+        ? personLookup.get(relation.targetId)
+        : undefined;
+
+      const TargetTag = target ? "a" : "div";
+
+      const avatarSrc = target
+        ? `${base}${target.avatar}`
+        : `${base}images/_placeholder.svg`;
+
+      const hasHistorical = Boolean(relation.historical);
+      const hasRomance = Boolean(relation.romance);
+      const bothLayers = hasHistorical && hasRomance;
+
+      // 兩層都有記載時，預設先顯示史實那一層。
+      const defaultLayer: "historical" | "romance" = hasHistorical
+        ? "historical"
+        : "romance";
+
+      return (
+        <article class="person-relation-card" data-relation-card>
+          <TargetTag
+            class:list={[
+              "person-relation-card__person",
+              { "is-link": Boolean(target) },
+            ]}
+            href={target ? `${base}character/${relation.targetId}/` : undefined}
+          >
+            <img
+              class="person-relation-card__avatar"
+              src={avatarSrc}
+              alt=""
+            />
+
+            <span class="person-relation-card__name">
+              {relation.targetName}
+            </span>
+          </TargetTag>
+
+          <div class="person-relation-card__tags">
+            <span class="person-relation-card__group">
+              {relation.relationGroupLabel}
+            </span>
+
+            <div class="person-relation-card__nature-tags">
+              {hasHistorical && (
+                bothLayers ? (
+                  <button
+                    type="button"
+                    class:list={[
+                      "person-relation-card__nature-tag",
+                      "person-relation-card__nature-tag--historical",
+                      { "is-active": defaultLayer === "historical" },
+                    ]}
+                    data-relation-layer-btn="historical"
+                    aria-pressed={defaultLayer === "historical" ? "true" : "false"}
+                  >
+                    史實
+                  </button>
+                ) : (
+                  <span class="person-relation-card__nature-tag person-relation-card__nature-tag--historical is-active">
+                    史實
+                  </span>
+                )
+              )}
+
+              {hasRomance && (
+                bothLayers ? (
+                  <button
+                    type="button"
+                    class:list={[
+                      "person-relation-card__nature-tag",
+                      "person-relation-card__nature-tag--romance",
+                      { "is-active": defaultLayer === "romance" },
+                    ]}
+                    data-relation-layer-btn="romance"
+                    aria-pressed={defaultLayer === "romance" ? "true" : "false"}
+                  >
+                    後世
+                  </button>
+                ) : (
+                  <span class="person-relation-card__nature-tag person-relation-card__nature-tag--romance is-active">
+                    後世
+                  </span>
+                )
+              )}
+            </div>
+          </div>
+
+          <div class="person-relation-card__content">
+            {hasHistorical && (
+              <p
+                class="person-relation-card__layer-text"
+                data-relation-layer="historical"
+                hidden={defaultLayer !== "historical"}
+              >
+                {relation.historical}
+              </p>
+            )}
+
+            {hasRomance && (
+              <p
+                class="person-relation-card__layer-text"
+                data-relation-layer="romance"
+                hidden={defaultLayer !== "romance"}
+              >
+                {relation.romance}
+              </p>
+            )}
+          </div>
+        </article>
+      );
+    })
+  }
+</div>
+
+<script>
+  const cards = Array.from(
+    document.querySelectorAll("[data-relation-card]"),
+  );
+
+  cards.forEach((card) => {
+    const buttons = Array.from(
+      card.querySelectorAll("[data-relation-layer-btn]"),
+    );
+
+    const layers = Array.from(
+      card.querySelectorAll("[data-relation-layer]"),
+    );
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const targetLayer = button.getAttribute(
+          "data-relation-layer-btn",
+        );
+
+        buttons.forEach((otherButton) => {
+          const isActive = otherButton === button;
+
+          otherButton.classList.toggle("is-active", isActive);
+
+          otherButton.setAttribute(
+            "aria-pressed",
+            isActive ? "true" : "false",
+          );
+        });
+
+        layers.forEach((layer) => {
+          if (!(layer instanceof HTMLElement)) {
+            return;
+          }
+
+          layer.hidden =
+            layer.getAttribute("data-relation-layer") !== targetLayer;
+        });
+      });
+    });
+  });
+</script>
