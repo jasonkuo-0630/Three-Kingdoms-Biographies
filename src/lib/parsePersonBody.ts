@@ -65,10 +65,22 @@ export interface ParsedEvaluation {
 }
 
 
+/**
+ * 一段白話文字，加上緊接在後面的史料出處。
+ *
+ * 出處會用比內文小一號的乾淨格式（書名＋卷次）獨立顯示，
+ * 不再混在段落文字裡面，方便之後串連到三國文獻庫。
+ */
+export interface ParsedParagraph {
+  text: string;
+  citations: ParsedCitation[];
+}
+
+
 export interface ParsedBiographyEntry {
   period: string;
   title: string;
-  paragraphs: string[];
+  paragraphs: ParsedParagraph[];
   uncertaintyNote?: string;
   originalText?: string;
   historicalDifference?: string;
@@ -86,7 +98,7 @@ export interface ParsedWork {
 
 
 export interface ParsedPersonBody {
-  introParagraphs: string[];
+  introParagraphs: ParsedParagraph[];
   primaryIdentities: string[];
   titlesAndRanks: ParsedTitleAndRank[];
   factionStages: ParsedFactionStage[];
@@ -153,25 +165,47 @@ function splitBySections(body: string): SectionMap {
    共用小工具
    ============================== */
 
-function groupIntoParagraphBlocks(lines: string[]): string[] {
-  const blocks: string[] = [];
-  let current: string[] = [];
+/**
+ * 依空白行把段落分堆，並且把段落最後那一行「（來源：……）」
+ * 抽出來變成 citations，不再留在段落文字裡面。
+ */
+function groupIntoParagraphBlocks(lines: string[]): ParsedParagraph[] {
+  const blocks: ParsedParagraph[] = [];
+
+  let currentTextLines: string[] = [];
+  let currentCitations: ParsedCitation[] = [];
+
+  const flush = () => {
+    if (currentTextLines.length === 0 && currentCitations.length === 0) {
+      return;
+    }
+
+    blocks.push({
+      text: currentTextLines.join(""),
+      citations: currentCitations,
+    });
+
+    currentTextLines = [];
+    currentCitations = [];
+  };
 
   for (const line of lines) {
     if (line.trim() === "") {
-      if (current.length > 0) {
-        blocks.push(current.join(""));
-        current = [];
-      }
+      flush();
       continue;
     }
 
-    current.push(line.trim());
+    const citations = parseCitationLine(line);
+
+    if (citations) {
+      currentCitations.push(...citations);
+      continue;
+    }
+
+    currentTextLines.push(line.trim());
   }
 
-  if (current.length > 0) {
-    blocks.push(current.join(""));
-  }
+  flush();
 
   return blocks;
 }
@@ -206,14 +240,14 @@ function parseCitationLine(line: string): ParsedCitation[] | null {
    ============================== */
 
 function parseIntro(lines: string[]): {
-  paragraphs: string[];
+  paragraphs: ParsedParagraph[];
   primaryIdentities: string[];
 } {
-  const paragraphs: string[] = [];
+  const paragraphs: ParsedParagraph[] = [];
   let primaryIdentities: string[] = [];
 
   for (const block of groupIntoParagraphBlocks(lines)) {
-    const match = block.match(/^\*\*主要身分\*\*[：:]\s*(.+)$/);
+    const match = block.text.match(/^\*\*主要身分\*\*[：:]\s*(.+)$/);
 
     if (match) {
       primaryIdentities = match[1]
@@ -447,13 +481,33 @@ function parseBiographySection(
 
   const flushBuffer = () => {
     if (bufferLines.length > 0 && entries.length > 0) {
-      const text = bufferLines.join("");
       const current = entries[entries.length - 1];
 
       if (bufferTarget === "difference") {
-        current.historicalDifference = text;
+        current.historicalDifference = bufferLines.join("");
       } else {
-        current.paragraphs.push(text);
+        /*
+         * 段落最後一行如果是「（來源：……）」，
+         * 抽出來變成 citations，不留在段落文字裡面。
+         */
+        const textLines: string[] = [];
+        const citations: ParsedCitation[] = [];
+
+        for (const bufferedLine of bufferLines) {
+          const found = parseCitationLine(bufferedLine);
+
+          if (found) {
+            citations.push(...found);
+            continue;
+          }
+
+          textLines.push(bufferedLine);
+        }
+
+        current.paragraphs.push({
+          text: textLines.join(""),
+          citations,
+        });
       }
     }
 
