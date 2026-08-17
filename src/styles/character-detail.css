@@ -135,6 +135,37 @@
 
 
 /* ==============================
+   頁面位置（回到勢力人物總覽）
+   ============================== */
+
+.person-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(1180px, calc(100% - 40px));
+  margin: 20px auto 0;
+  color: var(--person-muted);
+  font-family: var(--person-display-font);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+.person-breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.person-breadcrumb a:hover {
+  color: var(--person-cinnabar);
+}
+
+.person-breadcrumb span[aria-hidden] {
+  opacity: 0.6;
+}
+
+
+/* ==============================
    人物卷首
    ============================== */
 
@@ -745,6 +776,16 @@
 }
 
 .person-overview__prose p + p {
+  margin-top: 12px;
+}
+
+/* 段落最後一行「（來源：……）」抽出來的乾淨小字來源清單 */
+
+.person-paragraph-citations {
+  margin-top: 6px;
+}
+
+.person-paragraph-citations + p {
   margin-top: 12px;
 }
 
