@@ -33,7 +33,20 @@ const { entries, isRomance = false } = Astro.props;
 
           <div class="person-overview__prose">
             {entry.paragraphs.map((paragraph) => (
-              <p>{paragraph}</p>
+              <>
+                <p>{paragraph.text}</p>
+
+                {paragraph.citations.length > 0 && (
+                  <ul class="person-rank-list__sources person-paragraph-citations">
+                    {paragraph.citations.map((citation) => (
+                      <li>
+                        {citation.source}
+                        {citation.locator && <small>{citation.locator}</small>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             ))}
           </div>
 
