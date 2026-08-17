@@ -69,8 +69,13 @@ export interface PersonIdentity {
   /** 籍貫。不填則顯示「不詳」。 */
   birthplace?: string;
 
-  /** 人物卷首的簡短介紹 */
-  summary: string;
+  /**
+   * 簡短人物介紹。
+   *
+   * 顯示在人物卷首，建議控制在一至三句。
+   * 一個陣列項目代表一個段落（.md 裡用空白行分段）。
+   */
+  summary: string[];
 
   /** 頭像圖片路徑 */
   avatar: string;
