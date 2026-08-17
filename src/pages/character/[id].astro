@@ -1,8 +1,5 @@
 ---
-import {
-  getCollection,
-  type CollectionEntry,
-} from "astro:content";
+import { getCollection } from "astro:content";
 
 import SiteHeader from "../../components/SiteHeader.astro";
 
@@ -22,6 +19,8 @@ import "../../styles/character-detail.css";
 
 import { parsePersonBody } from "../../lib/parsePersonBody";
 
+import { getFactionById } from "../../data/factions";
+
 
 /**
  * 依照 src/content/people/ 底下的 Markdown 檔案，
@@ -30,15 +29,10 @@ import { parsePersonBody } from "../../lib/parsePersonBody";
  * 例如：
  * src/content/people/guan-yu.md → /character/guan-yu/
  */
-interface Props {
-  entry: CollectionEntry<"people">;
-  allPeople: CollectionEntry<"people">[];
-}
-
 export async function getStaticPaths() {
-  const people: CollectionEntry<"people">[] = await getCollection("people");
+  const people = await getCollection("people");
 
-  return people.map((entry: CollectionEntry<"people">) => ({
+  return people.map((entry) => ({
     params: {
       id: entry.data.id,
     },
@@ -51,7 +45,7 @@ export async function getStaticPaths() {
 }
 
 
-const { entry, allPeople } = Astro.props as Props;
+const { entry, allPeople } = Astro.props;
 
 const { data: frontmatter, body } = entry;
 
@@ -63,7 +57,7 @@ const parsed = parsePersonBody(body ?? "");
  * 有的話才產生連結、帶入頭像。
  */
 const personLookup = new Map(
-  allPeople.map((person: CollectionEntry<"people">) => [
+  allPeople.map((person) => [
     person.data.id,
     {
       name: person.data.name,
@@ -95,7 +89,7 @@ const identity = {
         note: frontmatter.posthumousTitle.note,
 
         citations: (frontmatter.posthumousTitle.sources ?? []).map(
-          (sourceLine: string) => {
+          (sourceLine) => {
             const [source, locator] = sourceLine.split("・");
 
             return {
@@ -158,6 +152,12 @@ const tabs = [
 
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+
+/**
+ * 頁面位置麵包屑用：目前這位人物所屬的勢力資料，
+ * 用來組出「回到＿＿人物總覽」的連結。
+ */
+const factionMeta = getFactionById(identity.faction);
 ---
 
 <html lang="zh-Hant">
@@ -187,6 +187,22 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
     <SiteHeader referenceLibraryUrl="" />
 
     <main>
+      <nav class="person-breadcrumb" aria-label="頁面位置">
+        <a href={base}>首頁</a>
+
+        <span aria-hidden="true">／</span>
+
+        {
+          factionMeta ? (
+            <a href={`${base}faction/${factionMeta.id}/`}>
+              回到{factionMeta.name}人物總覽
+            </a>
+          ) : (
+            <span>{identity.name}</span>
+          )
+        }
+      </nav>
+
       <PersonHero identity={identity} />
 
       <nav
