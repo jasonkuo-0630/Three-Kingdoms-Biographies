@@ -1,0 +1,147 @@
+---
+import {
+  getCollection,
+  type CollectionEntry,
+} from "astro:content";
+
+import {
+  factions,
+  type FactionId,
+} from "../data/factions";
+
+/**
+ * 自動統計各勢力已收錄人數。
+ *
+ * 改讀 src/content/people/*.md（content collection），
+ * 不再使用暫時寫死的人數。
+ */
+const allPeople: CollectionEntry<"people">[] =
+  await getCollection("people");
+
+const factionCounts: Record<FactionId, number> = {
+  wei: 0,
+  shu: 0,
+  wu: 0,
+  donghan: 0,
+  qunxiong: 0,
+  jin: 0,
+};
+
+for (const person of allPeople) {
+  factionCounts[person.data.faction] += 1;
+}
+
+/**
+ * 將共用勢力資料與統計人數合併，
+ * 供首頁勢力入口顯示。
+ */
+const homepageFactions = factions.map(
+  (faction) => ({
+    ...faction,
+
+    currentCount:
+      factionCounts[faction.id],
+  }),
+);
+
+const base = import.meta.env.BASE_URL.replace(
+  /\/?$/,
+  "/",
+);
+---
+
+<section
+  class="home-hero"
+  aria-label="三國人物誌首頁"
+>
+  <!-- 首頁水墨背景 -->
+  <img
+    class="home-hero__background"
+    src={`${base}images/ink-wash-bg.jpg`}
+    alt=""
+    aria-hidden="true"
+  />
+
+  <!-- 左側：勢力入口 -->
+  <nav
+    class="home-faction-portal"
+    aria-label="選擇勢力入口"
+  >
+    <div
+      class:list={[
+        "home-factions",
+        {
+          "home-factions--five":
+            homepageFactions.length === 5,
+        },
+      ]}
+    >
+      {
+        homepageFactions.map((faction) => (
+          <a
+            class={`faction-card faction-card--${faction.id}`}
+            href={`${base}faction/${faction.id}/`}
+            aria-label={`進入${faction.name}人物入口，目前已收錄${faction.currentCount}人`}
+          >
+            <span
+              class="faction-card__mark"
+              aria-hidden="true"
+            >
+              {faction.mark}
+            </span>
+
+            <span class="faction-card__portrait">
+              <img
+                src={`${base}${faction.portrait}`}
+                alt={`${faction.representative}肖像`}
+              />
+            </span>
+
+            <span class="faction-card__copy">
+              <strong class="faction-card__name">
+                {faction.name}
+              </strong>
+
+              <span class="faction-card__motto">
+                {faction.homeMotto}
+              </span>
+
+              <span class="faction-card__count">
+                已收錄
+
+                <b>
+                  {faction.currentCount}
+                </b>
+
+                人
+              </span>
+            </span>
+          </a>
+        ))
+      }
+    </div>
+  </nav>
+
+  <!-- 右側：無名說書客 -->
+  <aside
+    class="home-storyteller"
+    aria-label="無名說書客"
+  >
+    <img
+      class="home-storyteller__portrait"
+      src={`${base}images/storyteller-cutout.png`}
+      alt="無名說書客"
+    />
+
+    <div class="home-storyteller__copy">
+      <blockquote>
+        「亂世烽煙分鼎足，<br />
+        一卷山河記群英。」
+      </blockquote>
+
+      <p>
+        無名說書客
+      </p>
+    </div>
+  </aside>
+</section>
