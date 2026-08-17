@@ -1,0 +1,775 @@
+/*
+ * 勢力人物總覽
+ * 與 src/pages/faction/[faction].astro 搭配使用
+ *
+ * 保留新版設計，
+ * 僅沿用舊專案的整頁背景色與人物竹簡配色。
+ */
+
+:root {
+  --overview-background: #17140f;
+  --overview-text: #eee8dc;
+  --overview-muted: #aaa08e;
+  --overview-bronze: #c4a269;
+  --overview-line: rgba(215, 195, 156, 0.18);
+
+  --overview-display-font:
+    "Noto Serif TC",
+    "Songti TC",
+    serif;
+
+  --overview-body-font:
+    "Noto Sans TC",
+    system-ui,
+    sans-serif;
+}
+
+
+/* ==============================
+   頁面與勢力配色
+   ============================== */
+
+.faction-overview-page {
+  /*
+   * --faction-color 與 --faction-color-soft：
+   * 新版橫幅與一般介面使用。
+   *
+   * --legacy-tone：
+   * 舊版整頁背景與竹簡使用。
+   */
+
+  --faction-color: #647b5d;
+  --faction-color-soft: #2c4031;
+  --legacy-tone: #466348;
+
+  min-height: 100vh;
+  margin: 0;
+  color: var(--overview-text);
+  font-family: var(--overview-body-font);
+
+  /*
+   * 舊專案的整頁背景混色方式。
+   */
+
+  background:
+    radial-gradient(
+      ellipse 1600px 900px at 50% 0%,
+      color-mix(
+        in srgb,
+        var(--legacy-tone) 18%,
+        transparent
+      ),
+      transparent 75%
+    ),
+    color-mix(
+      in srgb,
+      var(--legacy-tone) 26%,
+      black
+    );
+}
+
+
+/* 曹魏 */
+
+.faction-overview-page--wei {
+  --faction-color: #607d8d;
+  --faction-color-soft: #263a43;
+  --legacy-tone: #334b5d;
+}
+
+
+/* 蜀漢 */
+
+.faction-overview-page--shu {
+  --faction-color: #647b5d;
+  --faction-color-soft: #2c4031;
+  --legacy-tone: #466348;
+}
+
+
+/* 孫吳 */
+
+.faction-overview-page--wu {
+  --faction-color: #9a5c50;
+  --faction-color-soft: #4c2925;
+  --legacy-tone: #82433b;
+}
+
+
+/* 東漢 */
+
+.faction-overview-page--donghan {
+  --faction-color: #76627f;
+  --faction-color-soft: #392e42;
+  --legacy-tone: #54405f;
+}
+
+
+/* 群雄 */
+
+.faction-overview-page--qunxiong {
+  --faction-color: #8a6f4c;
+  --faction-color-soft: #493924;
+  --legacy-tone: #7a5a35;
+}
+
+.faction-overview-page main {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 28px 0 96px;
+}
+
+
+/* ==============================
+   無障礙隱藏文字
+   ============================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
+  margin: -1px;
+  white-space: nowrap;
+  clip-path: inset(50%);
+  border: 0;
+}
+
+
+/* ==============================
+   頁面位置
+   ============================== */
+
+.faction-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: var(--overview-muted);
+  font-family: var(--overview-display-font);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+.faction-breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.faction-breadcrumb a:hover {
+  color: var(--overview-bronze);
+}
+
+.faction-breadcrumb span {
+  opacity: 0.6;
+}
+
+
+/* ==============================
+   勢力橫幅
+   ============================== */
+
+.faction-overview-banner {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-height: 220px;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 38px 48px;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--faction-color) 55%,
+      var(--overview-line)
+    );
+  background:
+    linear-gradient(
+      100deg,
+      color-mix(
+        in srgb,
+        var(--faction-color-soft) 88%,
+        #1a1611
+      ),
+      rgba(25, 21, 16, 0.94) 68%,
+      rgba(18, 16, 13, 0.98)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 16px 40px rgba(0, 0, 0, 0.22);
+}
+
+.faction-overview-banner::after {
+  position: absolute;
+  inset: 12px;
+  z-index: 0;
+  content: "";
+  border: 1px solid rgba(223, 207, 174, 0.09);
+  pointer-events: none;
+}
+
+
+/* 勢力大字浮水印 */
+
+.faction-overview-banner__mark {
+  position: absolute;
+  top: 50%;
+  right: 28px;
+  z-index: 1;
+  color:
+    color-mix(
+      in srgb,
+      var(--faction-color) 40%,
+      transparent
+    );
+  font-family: var(--overview-display-font);
+  font-size: clamp(170px, 21vw, 270px);
+  font-weight: 700;
+  line-height: 0.8;
+  transform: translateY(-48%);
+  user-select: none;
+  pointer-events: none;
+}
+
+
+/* 橫幅文字 */
+
+.faction-overview-banner__copy {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  margin-right: clamp(90px, 14vw, 170px);
+  margin-left: 0;
+}
+
+.faction-overview-banner__copy > p {
+  margin: 0 0 8px;
+  color: var(--overview-muted);
+  font-size: 13px;
+  letter-spacing: 0.28em;
+}
+
+.faction-overview-banner__copy > h1 {
+  margin: 0;
+  color: #f4eee2;
+  font-family: var(--overview-display-font);
+  font-size: clamp(38px, 5vw, 62px);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.15;
+}
+
+
+/* 七言對句 */
+
+.faction-overview-banner__copy > blockquote {
+  margin: 14px 0 0;
+  color: var(--overview-bronze);
+  font-family: var(--overview-display-font);
+  font-size: clamp(14px, 1.25vw, 17px);
+  letter-spacing: 0.1em;
+  line-height: 1.7;
+}
+
+
+/* 收錄人數 */
+
+.faction-overview-banner__count {
+  position: relative;
+  z-index: 2;
+  align-self: flex-end;
+  margin: 0 0 4px auto;
+  color: var(--overview-muted);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.faction-overview-banner__count strong {
+  margin: 0 5px;
+  color: var(--overview-bronze);
+  font-family: var(--overview-display-font);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+
+/* ==============================
+   人物搜尋
+   ============================== */
+
+.faction-list-tools {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 34px 0 18px;
+}
+
+.faction-list-search {
+  position: relative;
+  flex: 1;
+}
+
+.faction-list-search svg {
+  position: absolute;
+  top: 50%;
+  left: 17px;
+  width: 18px;
+  height: 18px;
+  color: var(--overview-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.faction-list-search input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 48px;
+  color: var(--overview-text);
+  font: inherit;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--overview-line);
+  border-radius: 2px;
+  outline: none;
+  background: rgba(31, 27, 21, 0.9);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.faction-list-search input::placeholder {
+  color: #81796b;
+}
+
+.faction-list-search input:focus {
+  border-color:
+    color-mix(
+      in srgb,
+      var(--faction-color) 72%,
+      var(--overview-bronze)
+    );
+  background: rgba(38, 33, 25, 0.96);
+  box-shadow:
+    0 0 0 3px
+      color-mix(
+        in srgb,
+        var(--faction-color) 15%,
+        transparent
+      );
+}
+
+.faction-list-search input::-webkit-search-cancel-button {
+  cursor: pointer;
+  filter: invert(0.75);
+}
+
+.faction-list-clear {
+  min-height: 50px;
+  padding: 0 22px;
+  color: var(--overview-muted);
+  font: inherit;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--overview-line);
+  border-radius: 2px;
+  cursor: pointer;
+  background: rgba(31, 27, 21, 0.9);
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.faction-list-clear:hover {
+  color: var(--overview-bronze);
+  border-color: rgba(196, 162, 105, 0.48);
+  background: rgba(47, 39, 28, 0.95);
+}
+
+.faction-list-count {
+  margin: 0 0 12px;
+  color: var(--overview-muted);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+
+/* ==============================
+   人物竹簡列表
+   ============================== */
+
+.faction-person-list {
+  display: grid;
+  gap: 11px;
+}
+
+
+/*
+ * 竹簡外觀沿用舊專案配色，
+ * 尺寸、排版與 Hover 動畫維持新版設計。
+ */
+
+.faction-person-slip {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 88px;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 14px 22px 14px 18px;
+  color: var(--overview-text);
+  text-decoration: none;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--legacy-tone) 38%,
+      rgba(236, 220, 190, 0.08)
+    );
+  border-radius: 2px;
+
+  /*
+   * 舊專案竹簡漸層。
+   */
+
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(
+        in srgb,
+        var(--legacy-tone) 46%,
+        #14100c
+      ),
+      color-mix(
+        in srgb,
+        var(--legacy-tone) 22%,
+        #14100c
+      ) 60%,
+      color-mix(
+        in srgb,
+        var(--legacy-tone) 14%,
+        #14100c
+      ) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.03),
+      rgba(255, 255, 255, 0.01)
+    );
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 246, 222, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.46),
+    0 4px 12px rgba(0, 0, 0, 0.16);
+
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    filter 220ms ease;
+}
+
+.faction-person-slip:hover {
+  z-index: 2;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--legacy-tone) 55%,
+      #d7c69f
+    );
+  filter: brightness(1.08);
+  transform: translateX(5px) translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 246, 222, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    -5px 8px 22px rgba(0, 0, 0, 0.3);
+}
+
+.faction-person-slip:focus-visible {
+  z-index: 2;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--legacy-tone) 55%,
+      #d7c69f
+    );
+  outline: 2px solid var(--overview-bronze);
+  outline-offset: 3px;
+  filter: brightness(1.08);
+  transform: translateX(5px) translateY(-2px);
+}
+
+
+/* 竹簡左側勢力色線 */
+
+.faction-person-slip__accent {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--legacy-tone);
+  opacity: 0.7;
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.08),
+    4px 0 12px
+      color-mix(
+        in srgb,
+        var(--legacy-tone) 24%,
+        transparent
+      );
+  transition:
+    width 220ms ease,
+    opacity 220ms ease;
+}
+
+.faction-person-slip:hover
+  .faction-person-slip__accent,
+.faction-person-slip:focus-visible
+  .faction-person-slip__accent {
+  width: 7px;
+  opacity: 1;
+}
+
+
+/* 人物頭像 */
+
+.faction-person-slip__avatar {
+  flex: 0 0 auto;
+  width: 58px;
+  height: 58px;
+  overflow: hidden;
+  border: 1px solid rgba(220, 201, 161, 0.32);
+  border-radius: 50%;
+  background: #181510;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.28);
+}
+
+.faction-person-slip__avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+
+/* 人物姓名與字號 */
+
+.faction-person-slip__identity {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  min-width: 0;
+}
+
+.faction-person-slip__identity strong {
+  color: #f3ede1;
+  font-family: var(--overview-display-font);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.faction-person-slip__identity > span {
+  color: var(--overview-muted);
+  font-family: var(--overview-display-font);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+
+/* 查看人物 */
+
+.faction-person-slip__action {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: var(--overview-bronze);
+  font-family: var(--overview-display-font);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(-10px);
+
+  transition:
+    visibility 180ms ease,
+    opacity 180ms ease,
+    transform 220ms ease;
+}
+
+.faction-person-slip:hover
+  .faction-person-slip__action,
+.faction-person-slip:focus-visible
+  .faction-person-slip__action {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.faction-person-slip__action > span {
+  display: inline-block;
+  font-size: 17px;
+  transition: transform 220ms ease;
+}
+
+.faction-person-slip:hover
+  .faction-person-slip__action > span,
+.faction-person-slip:focus-visible
+  .faction-person-slip__action > span {
+  transform: translateX(5px);
+}
+
+
+/* 搜尋結果隱藏 */
+
+.faction-person-slip[hidden],
+.faction-list-empty[hidden] {
+  display: none;
+}
+
+
+/* 無搜尋結果 */
+
+.faction-list-empty {
+  display: grid;
+  padding: 52px 24px;
+  place-items: center;
+  color: var(--overview-muted);
+  text-align: center;
+  letter-spacing: 0.08em;
+  border: 1px dashed var(--overview-line);
+  background: rgba(29, 25, 20, 0.72);
+}
+
+
+/* ==============================
+   手機版
+   ============================== */
+
+@media (max-width: 720px) {
+  .faction-overview-page main {
+    width: min(100% - 24px, 1180px);
+    padding-top: 18px;
+  }
+
+  .faction-overview-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    min-height: 200px;
+    padding: 30px 25px;
+  }
+
+  .faction-overview-banner__mark {
+    right: 8px;
+    font-size: 170px;
+  }
+
+  .faction-overview-banner__copy {
+    margin-right: 58px;
+    margin-left: 0;
+  }
+
+  .faction-overview-banner__copy > h1 {
+    font-size: 38px;
+  }
+
+  .faction-overview-banner__copy > blockquote {
+    font-size: 14px;
+    letter-spacing: 0.06em;
+  }
+
+  .faction-overview-banner__count {
+    margin: 18px 0 0 auto;
+  }
+
+  .faction-list-tools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .faction-list-clear {
+    align-self: flex-end;
+    min-height: 42px;
+  }
+
+  .faction-person-slip {
+    gap: 12px;
+    min-height: 78px;
+    padding: 11px 14px 11px 13px;
+  }
+
+  .faction-person-slip__avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .faction-person-slip__identity {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .faction-person-slip__identity strong {
+    font-size: 19px;
+  }
+
+  .faction-person-slip__identity > span {
+    font-size: 13px;
+  }
+
+  .faction-person-slip__action {
+    gap: 4px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 430px) {
+  .faction-overview-banner__copy {
+    margin-right: 36px;
+    margin-left: 0;
+  }
+
+  .faction-person-slip__avatar {
+    width: 45px;
+    height: 45px;
+  }
+
+  .faction-person-slip__action {
+    font-size: 11px;
+  }
+}
+
+
+/* ==============================
+   減少動態效果
+   ============================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .faction-breadcrumb a,
+  .faction-list-search input,
+  .faction-list-clear,
+  .faction-person-slip,
+  .faction-person-slip__accent,
+  .faction-person-slip__action,
+  .faction-person-slip__action > span {
+    transition: none;
+  }
+
+  .faction-person-slip:hover,
+  .faction-person-slip:focus-visible {
+    transform: none;
+  }
+}
