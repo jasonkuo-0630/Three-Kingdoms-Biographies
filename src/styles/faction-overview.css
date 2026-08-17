@@ -49,8 +49,9 @@
    * 改的只有「這些顏色被混進亮底還是暗底」。
    */
 
-  --faction-color: #647b5d;
-  --faction-color-soft: #2c4031;
+  --faction-color: #68745c;
+  --faction-color-dark: #40513b;
+  --faction-color-light: #898e79;
   --legacy-tone: #466348;
 
   min-height: 100vh;
@@ -86,8 +87,9 @@
 /* 曹魏 */
 
 .faction-overview-page--wei {
-  --faction-color: #607d8d;
-  --faction-color-soft: #263a43;
+  --faction-color: #687985;
+  --faction-color-dark: #3c4f5b;
+  --faction-color-light: #858b88;
   --legacy-tone: #334b5d;
 }
 
@@ -95,8 +97,9 @@
 /* 蜀漢 */
 
 .faction-overview-page--shu {
-  --faction-color: #647b5d;
-  --faction-color-soft: #2c4031;
+  --faction-color: #68745c;
+  --faction-color-dark: #40513b;
+  --faction-color-light: #898e79;
   --legacy-tone: #466348;
 }
 
@@ -104,8 +107,9 @@
 /* 孫吳 */
 
 .faction-overview-page--wu {
-  --faction-color: #9a5c50;
-  --faction-color-soft: #4c2925;
+  --faction-color: #89564e;
+  --faction-color-dark: #6a3934;
+  --faction-color-light: #98786f;
   --legacy-tone: #82433b;
 }
 
@@ -113,8 +117,9 @@
 /* 東漢 */
 
 .faction-overview-page--donghan {
-  --faction-color: #76627f;
-  --faction-color-soft: #392e42;
+  --faction-color: #6e5d78;
+  --faction-color-dark: #493c52;
+  --faction-color-light: #897e8c;
   --legacy-tone: #54405f;
 }
 
@@ -122,8 +127,9 @@
 /* 群雄 */
 
 .faction-overview-page--qunxiong {
-  --faction-color: #8a6f4c;
-  --faction-color-soft: #493924;
+  --faction-color: #806441;
+  --faction-color-dark: #5d472b;
+  --faction-color-light: #928069;
   --legacy-tone: #7a5a35;
 }
 
@@ -213,18 +219,14 @@
   background:
     linear-gradient(
       100deg,
-      color-mix(
-        in srgb,
-        var(--faction-color-soft) 88%,
-        #1a1611
-      ),
-      rgba(25, 21, 16, 0.94) 68%,
-      rgba(18, 16, 13, 0.98)
+      var(--faction-color-dark) 0%,
+      var(--faction-color) 48%,
+      var(--faction-color-light) 100%
     );
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    0 16px 40px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(45, 36, 24, 0.16),
+    0 16px 40px rgba(20, 16, 10, 0.22);
 }
 
 .faction-overview-banner::after {
@@ -461,27 +463,14 @@
 
   background:
     linear-gradient(
-      90deg,
-      color-mix(
-        in srgb,
-        var(--legacy-tone) 28%,
-        #f2e9d6
-      ),
-      color-mix(
-        in srgb,
-        var(--legacy-tone) 15%,
-        #f2e9d6
-      ) 60%,
-      color-mix(
-        in srgb,
-        var(--legacy-tone) 9%,
-        #f2e9d6
-      ) 100%
-    ),
-    linear-gradient(
       180deg,
       rgba(255, 255, 255, 0.4),
       rgba(255, 255, 255, 0.05)
+    ),
+    color-mix(
+      in srgb,
+      var(--legacy-tone) 24%,
+      #f2e9d6
     );
 
   box-shadow:
@@ -534,7 +523,7 @@
   inset: 0 auto 0 0;
   width: 4px;
   background: var(--legacy-tone);
-  opacity: 0.7;
+  opacity: 0.9;
   box-shadow:
     1px 0 0 rgba(255, 255, 255, 0.3),
     4px 0 12px
