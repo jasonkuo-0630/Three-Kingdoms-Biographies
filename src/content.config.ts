@@ -67,12 +67,21 @@ const people = defineCollection({
     /**
      * 人物卷首簡短介紹。
      *
-     * 在 .md 裡用 `summary: |` 換行寫方便閱讀沒關係，
-     * 這裡會把換行去掉、接成一整句，畫面上不會多出空格。
+     * 一定要用 `summary: |`（不要用 `>`），在 .md 裡寫法：
+     *
+     * - 純粹手動斷行方便閱讀（沒有空白行）：
+     *   接成同一段，斷行處不會留空格。
+     * - 真的想分段，就空一整行：
+     *   會變成兩個獨立段落，畫面上有段落間距。
      */
     summary: z
       .string()
-      .transform((value) => value.replace(/\r?\n\s*/g, "").trim()),
+      .transform((value) =>
+        value
+          .split(/\n{2,}/)
+          .map((paragraph) => paragraph.replace(/\r?\n\s*/g, "").trim())
+          .filter(Boolean),
+      ),
 
     /** 頭像圖片路徑，圖片要先放進 public/images/。必填。 */
     avatar: z.string(),
