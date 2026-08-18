@@ -64,10 +64,26 @@ const { entries, isRomance = false } = Astro.props;
             </details>
           )}
 
-          {isRomance && entry.historicalDifference && (
+          {isRomance && entry.historicalDifference && entry.historicalDifference.length > 0 && (
             <aside class="person-overview__notice person-biography-entry__difference">
               <strong>與史實的差異</strong>
-              <p>{entry.historicalDifference}</p>
+
+              {entry.historicalDifference.map((paragraph) => (
+                <>
+                  <p>{paragraph.text}</p>
+
+                  {paragraph.citations.length > 0 && (
+                    <ul class="person-rank-list__sources person-paragraph-citations">
+                      {paragraph.citations.map((citation) => (
+                        <li>
+                          {citation.source}
+                          {citation.locator && <small>{citation.locator}</small>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ))}
             </aside>
           )}
         </article>
