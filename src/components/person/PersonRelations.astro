@@ -53,13 +53,13 @@ function normalizeRelationLayer(
 
   if (!sourceMatch) {
     return {
-      text: value.trim(),
+      text: [value.trim()],
       citations: [],
     };
   }
 
   return {
-    text: sourceMatch[1].trim(),
+    text: [sourceMatch[1].trim()],
 
     citations: sourceMatch[2]
       .split("；")
@@ -218,7 +218,12 @@ function normalizeRelationLayer(
                   }
                 >
                   <p class="person-relation-card__layer-text">
-                    {historical.text}
+                    {historical.text.map((line, index) => (
+                      <>
+                        {index > 0 && <br />}
+                        {line}
+                      </>
+                    ))}
                   </p>
 
                   {
@@ -258,7 +263,12 @@ function normalizeRelationLayer(
                   }
                 >
                   <p class="person-relation-card__layer-text">
-                    {romance.text}
+                    {romance.text.map((line, index) => (
+                      <>
+                        {index > 0 && <br />}
+                        {line}
+                      </>
+                    ))}
                   </p>
 
                   {
