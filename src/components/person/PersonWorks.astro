@@ -34,7 +34,20 @@ const { works, note } = Astro.props;
           {work.summaryParagraphs.length > 0 && (
             <div class="person-overview__prose">
               {work.summaryParagraphs.map((paragraph) => (
-                <p>{paragraph}</p>
+                <>
+                  <p>{paragraph.text}</p>
+
+                  {paragraph.citations.length > 0 && (
+                    <ul class="person-rank-list__sources person-paragraph-citations">
+                      {paragraph.citations.map((citation) => (
+                        <li>
+                          {citation.source}
+                          {citation.locator && <small>{citation.locator}</small>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               ))}
             </div>
           )}
@@ -43,10 +56,16 @@ const { works, note } = Astro.props;
             <p class="person-work-card__excerpt">「{work.excerpt}」</p>
           )}
 
-          {work.originalText && (
+          {work.originalText && work.originalText.length > 0 && (
             <details class="person-work-card__original">
-              <summary>展開原文（約{work.originalText.length}字）</summary>
-              <p>{work.originalText}</p>
+              <summary>
+                展開原文（約{work.originalText.join("").length}字）
+              </summary>
+              <div class="person-overview__prose">
+                {work.originalText.map((paragraph) => (
+                  <p>{paragraph}</p>
+                ))}
+              </div>
             </details>
           )}
         </li>
