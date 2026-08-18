@@ -96,6 +96,32 @@ const base =
 
 
   <div class="person-hero__inner">
+    <!-- 頁面位置：含在人物卷首橫幅內 -->
+
+    <nav
+      class="person-hero__breadcrumb"
+      aria-label="頁面位置"
+    >
+      <a href={base}>
+        首頁
+      </a>
+
+      <span aria-hidden="true">
+        ／
+      </span>
+
+      {
+        faction ? (
+          <a href={`${base}faction/${faction.id}/`}>
+            回到{faction.name}人物總覽
+          </a>
+        ) : (
+          <span>{identity.name}</span>
+        )
+      }
+    </nav>
+
+
     <!-- 人物頭像 -->
 
     <figure class="person-hero__portrait">
@@ -127,13 +153,16 @@ const base =
       </div>
 
 
-      {
-        identity.summary.map((paragraph) => (
-          <p class="person-hero__summary">
-            {paragraph}
-          </p>
-        ))
-      }
+      <p class="person-hero__summary">
+        {
+          identity.summary.map((paragraph, index) => (
+            <>
+              {index > 0 && <br />}
+              {paragraph}
+            </>
+          ))
+        }
+      </p>
 
 
       <!-- 籍貫獨立顯示 -->
