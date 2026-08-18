@@ -19,8 +19,6 @@ import "../../styles/character-detail.css";
 
 import { parsePersonBody } from "../../lib/parsePersonBody";
 
-import { getFactionById } from "../../data/factions";
-
 
 /**
  * 依照 src/content/people/ 底下的 Markdown 檔案，
@@ -106,11 +104,17 @@ const identity = {
 /**
  * 判斷各分頁是否有資料。
  */
-const hasHistoricalBio = parsed.historicalBio.length > 0;
-const hasRomanceBio = parsed.romanceBio.length > 0;
-const hasRelations = parsed.relations.length > 0;
+const hasHistoricalBio =
+  parsed.historicalBio.length > 0;
 
-const hasWorks = parsed.works.length > 0;
+const hasRomanceBio =
+  parsed.romanceBio.length > 0;
+
+const hasRelations =
+  parsed.relations.length > 0;
+
+const hasWorks =
+  parsed.works.length > 0;
 
 const hasEvaluations =
   parsed.evaluations.contemporary.length > 0 ||
@@ -130,34 +134,57 @@ const tabs = [
   },
 
   ...(hasHistoricalBio
-    ? [{ key: "historical", label: "史實生平" }]
+    ? [
+        {
+          key: "historical",
+          label: "史實生平",
+        },
+      ]
     : []),
 
   ...(hasRomanceBio
-    ? [{ key: "romance", label: "演義生平" }]
+    ? [
+        {
+          key: "romance",
+          label: "演義生平",
+        },
+      ]
     : []),
 
   ...(hasRelations
-    ? [{ key: "relations", label: "親屬" }]
+    ? [
+        {
+          key: "relations",
+          label: "親屬",
+        },
+      ]
     : []),
 
   ...(hasWorks
-    ? [{ key: "works", label: "著作" }]
+    ? [
+        {
+          key: "works",
+          label: "著作",
+        },
+      ]
     : []),
 
   ...(hasEvaluations
-    ? [{ key: "evaluations", label: "評價" }]
+    ? [
+        {
+          key: "evaluations",
+          label: "評價",
+        },
+      ]
     : []),
 ];
 
 
-const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
-
-/**
- * 頁面位置麵包屑用：目前這位人物所屬的勢力資料，
- * 用來組出「回到＿＿人物總覽」的連結。
- */
-const factionMeta = getFactionById(identity.faction);
+const base =
+  import.meta.env.BASE_URL.replace(
+    /\/?$/,
+    "/",
+  );
 ---
 
 <html lang="zh-Hant">
@@ -169,13 +196,31 @@ const factionMeta = getFactionById(identity.faction);
       content="width=device-width, initial-scale=1.0"
     />
 
-    <title>{identity.name}｜三國人物誌</title>
+    <title>
+      {identity.name}｜三國人物誌
+    </title>
 
-    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
-    <link rel="icon" href={`${base}favicon.ico`} />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href={`${base}favicon.svg`}
+    />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="icon"
+      href={`${base}favicon.ico`}
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
 
     <link
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&display=swap"
@@ -183,27 +228,17 @@ const factionMeta = getFactionById(identity.faction);
     />
   </head>
 
-  <body class={`person-detail-page person-detail-page--${identity.faction}`}>
-    <SiteHeader referenceLibraryUrl="" />
+  <body
+    class={`person-detail-page person-detail-page--${identity.faction}`}
+  >
+    <SiteHeader
+      referenceLibraryUrl=""
+    />
 
     <main>
-      <nav class="person-breadcrumb" aria-label="頁面位置">
-        <a href={base}>首頁</a>
-
-        <span aria-hidden="true">／</span>
-
-        {
-          factionMeta ? (
-            <a href={`${base}faction/${factionMeta.id}/`}>
-              回到{factionMeta.name}人物總覽
-            </a>
-          ) : (
-            <span>{identity.name}</span>
-          )
-        }
-      </nav>
-
-      <PersonHero identity={identity} />
+      <PersonHero
+        identity={identity}
+      />
 
       <nav
         class="person-tabs"
@@ -213,10 +248,19 @@ const factionMeta = getFactionById(identity.faction);
         {
           tabs.map((tab, index) => (
             <button
-              class:list={["person-tab", { "is-active": index === 0 }]}
+              class:list={[
+                "person-tab",
+                {
+                  "is-active": index === 0,
+                },
+              ]}
               type="button"
               role="tab"
-              aria-selected={index === 0 ? "true" : "false"}
+              aria-selected={
+                index === 0
+                  ? "true"
+                  : "false"
+              }
               aria-controls={`person-panel-${tab.key}`}
               data-person-tab={tab.key}
             >
@@ -237,46 +281,99 @@ const factionMeta = getFactionById(identity.faction);
               hidden={index !== 0}
             >
               <header class="person-panel__heading">
-                <p>三國人物誌</p>
-                <h2>{tab.label}</h2>
+                <p>
+                  三國人物誌
+                </p>
+
+                <h2>
+                  {tab.label}
+                </h2>
               </header>
 
-              {tab.key === "overview" && (
-                <PersonOverview
-                  identity={identity}
-                  introParagraphs={parsed.introParagraphs}
-                  primaryIdentities={parsed.primaryIdentities}
-                  titlesAndRanks={parsed.titlesAndRanks}
-                  factionStages={parsed.factionStages}
-                  personLookup={personLookup}
-                />
-              )}
+              {
+                tab.key === "overview" && (
+                  <PersonOverview
+                    identity={identity}
+                    introParagraphs={
+                      parsed.introParagraphs
+                    }
+                    primaryIdentities={
+                      parsed.primaryIdentities
+                    }
+                    titlesAndRanks={
+                      parsed.titlesAndRanks
+                    }
+                    factionStages={
+                      parsed.factionStages
+                    }
+                    personLookup={
+                      personLookup
+                    }
+                  />
+                )
+              }
 
-              {tab.key === "historical" && (
-                <PersonBiography entries={parsed.historicalBio} />
-              )}
+              {
+                tab.key === "historical" && (
+                  <PersonBiography
+                    entries={
+                      parsed.historicalBio
+                    }
+                  />
+                )
+              }
 
-              {tab.key === "romance" && (
-                <PersonBiography entries={parsed.romanceBio} isRomance />
-              )}
+              {
+                tab.key === "romance" && (
+                  <PersonBiography
+                    entries={
+                      parsed.romanceBio
+                    }
+                    isRomance
+                  />
+                )
+              }
 
-              {tab.key === "relations" && (
-                <PersonRelations
-                  relations={parsed.relations}
-                  personLookup={personLookup}
-                />
-              )}
+              {
+                tab.key === "relations" && (
+                  <PersonRelations
+                    relations={
+                      parsed.relations
+                    }
+                    personLookup={
+                      personLookup
+                    }
+                  />
+                )
+              }
 
-              {tab.key === "works" && (
-                <PersonWorks works={parsed.works} note={parsed.worksNote} />
-              )}
+              {
+                tab.key === "works" && (
+                  <PersonWorks
+                    works={
+                      parsed.works
+                    }
+                    note={
+                      parsed.worksNote
+                    }
+                  />
+                )
+              }
 
-              {tab.key === "evaluations" && (
-                <PersonEvaluations
-                  contemporary={parsed.evaluations.contemporary}
-                  later={parsed.evaluations.later}
-                />
-              )}
+              {
+                tab.key === "evaluations" && (
+                  <PersonEvaluations
+                    contemporary={
+                      parsed.evaluations
+                        .contemporary
+                    }
+                    later={
+                      parsed.evaluations
+                        .later
+                    }
+                  />
+                )
+              }
             </section>
           ))
         }
@@ -285,58 +382,103 @@ const factionMeta = getFactionById(identity.faction);
 
     <script>
       const tabButtons = Array.from(
-        document.querySelectorAll("[data-person-tab]"),
+        document.querySelectorAll(
+          "[data-person-tab]",
+        ),
       );
 
       const tabPanels = Array.from(
-        document.querySelectorAll("[data-person-panel]"),
+        document.querySelectorAll(
+          "[data-person-panel]",
+        ),
       );
 
-      function activateTab(tabKey: string, updateHash = true) {
-        const targetButton = tabButtons.find(
-          (button) => button.getAttribute("data-person-tab") === tabKey,
-        );
+      function activateTab(
+        tabKey: string,
+        updateHash = true,
+      ) {
+        const targetButton =
+          tabButtons.find(
+            (button) =>
+              button.getAttribute(
+                "data-person-tab",
+              ) === tabKey,
+          );
 
         if (!targetButton) {
           return;
         }
 
         tabButtons.forEach((button) => {
-          const isActive = button === targetButton;
+          const isActive =
+            button === targetButton;
 
-          button.classList.toggle("is-active", isActive);
-          button.setAttribute("aria-selected", isActive ? "true" : "false");
+          button.classList.toggle(
+            "is-active",
+            isActive,
+          );
+
+          button.setAttribute(
+            "aria-selected",
+            isActive
+              ? "true"
+              : "false",
+          );
         });
 
         tabPanels.forEach((panel) => {
-          if (!(panel instanceof HTMLElement)) {
+          if (
+            !(
+              panel instanceof
+              HTMLElement
+            )
+          ) {
             return;
           }
 
-          panel.hidden = panel.dataset.personPanel !== tabKey;
+          panel.hidden =
+            panel.dataset.personPanel !==
+            tabKey;
         });
 
         if (updateHash) {
-          history.replaceState(null, "", `#${tabKey}`);
+          history.replaceState(
+            null,
+            "",
+            `#${tabKey}`,
+          );
         }
       }
 
       tabButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const tabKey = button.getAttribute("data-person-tab");
+        button.addEventListener(
+          "click",
+          () => {
+            const tabKey =
+              button.getAttribute(
+                "data-person-tab",
+              );
 
-          if (!tabKey) {
-            return;
-          }
+            if (!tabKey) {
+              return;
+            }
 
-          activateTab(tabKey);
-        });
+            activateTab(tabKey);
+          },
+        );
       });
 
-      const initialTabKey = window.location.hash.replace("#", "");
+      const initialTabKey =
+        window.location.hash.replace(
+          "#",
+          "",
+        );
 
       if (initialTabKey) {
-        activateTab(initialTabKey, false);
+        activateTab(
+          initialTabKey,
+          false,
+        );
       }
     </script>
   </body>
