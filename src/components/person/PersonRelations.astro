@@ -1,14 +1,80 @@
 ---
-import type { ParsedRelation } from "../../lib/parsePersonBody";
+import type {
+  ParsedRelation,
+  ParsedRelationLayer,
+} from "../../lib/parsePersonBody";
 
 interface Props {
   relations: ParsedRelation[];
-  personLookup: Map<string, { name: string; avatar: string }>;
+  personLookup: Map<
+    string,
+    {
+      name: string;
+      avatar: string;
+    }
+  >;
 }
 
 const { relations, personLookup } = Astro.props;
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+
+/**
+ * 同時相容：
+ *
+ * 新版物件格式：
+ * {
+ *   text: "恩若兄弟",
+ *   citations: [
+ *     {
+ *       source: "《三國志》卷三十六〈關羽傳〉",
+ *       locator: "關羽傳開篇",
+ *     },
+ *   ],
+ * }
+ *
+ * 舊版純文字格式：
+ * "恩若兄弟（來源：《三國志》卷三十六〈關羽傳〉・關羽傳開篇）"
+ */
+function normalizeRelationLayer(
+  value: ParsedRelationLayer | string | undefined,
+): ParsedRelationLayer | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const sourceMatch = value.match(
+    /^(.*?)[（(]來源[：:]\s*(.+?)[）)]\s*$/,
+  );
+
+  if (!sourceMatch) {
+    return {
+      text: value.trim(),
+      citations: [],
+    };
+  }
+
+  return {
+    text: sourceMatch[1].trim(),
+
+    citations: sourceMatch[2]
+      .split("；")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => {
+        const [source, locator] = entry.split("・");
+
+        return {
+          source: source.trim(),
+          locator: locator?.trim(),
+        };
+      }),
+  };
+}
 ---
 
 <div class="person-relations">
@@ -24,23 +90,45 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
         ? `${base}${target.avatar}`
         : `${base}images/_placeholder.svg`;
 
-      const hasHistorical = Boolean(relation.historical);
-      const hasRomance = Boolean(relation.romance);
+      const historical = normalizeRelationLayer(
+        relation.historical,
+      );
+
+      const romance = normalizeRelationLayer(
+        relation.romance,
+      );
+
+      const hasHistorical = Boolean(historical);
+      const hasRomance = Boolean(romance);
       const bothLayers = hasHistorical && hasRomance;
 
-      // 兩層都有記載時，預設先顯示史實那一層。
-      const defaultLayer: "historical" | "romance" = hasHistorical
+      /**
+       * 同時有史實與後世記載時，
+       * 預設先顯示史實。
+       */
+      const defaultLayer:
+        | "historical"
+        | "romance" = hasHistorical
         ? "historical"
         : "romance";
 
       return (
-        <article class="person-relation-card" data-relation-card>
+        <article
+          class="person-relation-card"
+          data-relation-card
+        >
           <TargetTag
             class:list={[
               "person-relation-card__person",
-              { "is-link": Boolean(target) },
+              {
+                "is-link": Boolean(target),
+              },
             ]}
-            href={target ? `${base}character/${relation.targetId}/` : undefined}
+            href={
+              target
+                ? `${base}character/${relation.targetId}/`
+                : undefined
+            }
           >
             <img
               class="person-relation-card__avatar"
@@ -59,70 +147,146 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
             </span>
 
             <div class="person-relation-card__nature-tags">
-              {hasHistorical && (
-                bothLayers ? (
-                  <button
-                    type="button"
-                    class:list={[
-                      "person-relation-card__nature-tag",
-                      "person-relation-card__nature-tag--historical",
-                      { "is-active": defaultLayer === "historical" },
-                    ]}
-                    data-relation-layer-btn="historical"
-                    aria-pressed={defaultLayer === "historical" ? "true" : "false"}
-                  >
-                    史實
-                  </button>
-                ) : (
-                  <span class="person-relation-card__nature-tag person-relation-card__nature-tag--historical is-active">
-                    史實
-                  </span>
-                )
-              )}
+              {
+                hasHistorical &&
+                  (bothLayers ? (
+                    <button
+                      type="button"
+                      class:list={[
+                        "person-relation-card__nature-tag",
+                        "person-relation-card__nature-tag--historical",
+                        {
+                          "is-active":
+                            defaultLayer === "historical",
+                        },
+                      ]}
+                      data-relation-layer-btn="historical"
+                      aria-pressed={
+                        defaultLayer === "historical"
+                          ? "true"
+                          : "false"
+                      }
+                    >
+                      史實
+                    </button>
+                  ) : (
+                    <span class="person-relation-card__nature-tag person-relation-card__nature-tag--historical is-active">
+                      史實
+                    </span>
+                  ))
+              }
 
-              {hasRomance && (
-                bothLayers ? (
-                  <button
-                    type="button"
-                    class:list={[
-                      "person-relation-card__nature-tag",
-                      "person-relation-card__nature-tag--romance",
-                      { "is-active": defaultLayer === "romance" },
-                    ]}
-                    data-relation-layer-btn="romance"
-                    aria-pressed={defaultLayer === "romance" ? "true" : "false"}
-                  >
-                    後世
-                  </button>
-                ) : (
-                  <span class="person-relation-card__nature-tag person-relation-card__nature-tag--romance is-active">
-                    後世
-                  </span>
-                )
-              )}
+              {
+                hasRomance &&
+                  (bothLayers ? (
+                    <button
+                      type="button"
+                      class:list={[
+                        "person-relation-card__nature-tag",
+                        "person-relation-card__nature-tag--romance",
+                        {
+                          "is-active":
+                            defaultLayer === "romance",
+                        },
+                      ]}
+                      data-relation-layer-btn="romance"
+                      aria-pressed={
+                        defaultLayer === "romance"
+                          ? "true"
+                          : "false"
+                      }
+                    >
+                      後世
+                    </button>
+                  ) : (
+                    <span class="person-relation-card__nature-tag person-relation-card__nature-tag--romance is-active">
+                      後世
+                    </span>
+                  ))
+              }
             </div>
           </div>
 
           <div class="person-relation-card__content">
-            {hasHistorical && (
-              <p
-                class="person-relation-card__layer-text"
-                data-relation-layer="historical"
-                hidden={defaultLayer !== "historical"}
-              >
-                {relation.historical}
-              </p>
-            )}
+            {
+              hasHistorical && historical && (
+                <div
+                  class="person-relation-card__layer"
+                  data-relation-layer="historical"
+                  hidden={
+                    defaultLayer !== "historical"
+                  }
+                >
+                  <p class="person-relation-card__layer-text">
+                    {historical.text}
+                  </p>
 
-            {hasRomance && (
-              <p
-                class="person-relation-card__layer-text"
-                data-relation-layer="romance"
-                hidden={defaultLayer !== "romance"}
-              >
-                {relation.romance}
-              </p>
-            )}
+                  {
+                    historical.citations.length > 0 && (
+                      <ul class="person-rank-list__sources person-relation-card__sources">
+                        {
+                          historical.citations.map(
+                            (citation) => (
+                              <li>
+                                {citation.source}
+
+                                {
+                                  citation.locator && (
+                                    <small>
+                                      {citation.locator}
+                                    </small>
+                                  )
+                                }
+                              </li>
+                            ),
+                          )
+                        }
+                      </ul>
+                    )
+                  }
+                </div>
+              )
+            }
+
+            {
+              hasRomance && romance && (
+                <div
+                  class="person-relation-card__layer"
+                  data-relation-layer="romance"
+                  hidden={
+                    defaultLayer !== "romance"
+                  }
+                >
+                  <p class="person-relation-card__layer-text">
+                    {romance.text}
+                  </p>
+
+                  {
+                    romance.citations.length > 0 && (
+                      <ul class="person-rank-list__sources person-relation-card__sources">
+                        {
+                          romance.citations.map(
+                            (citation) => (
+                              <li>
+                                {citation.source}
+
+                                {
+                                  citation.locator && (
+                                    <small>
+                                      {citation.locator}
+                                    </small>
+                                  )
+                                }
+                              </li>
+                            ),
+                          )
+                        }
+                      </ul>
+                    )
+                  }
+                </div>
+              )
+            }
           </div>
         </article>
       );
@@ -132,28 +296,39 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
 
 <script>
   const cards = Array.from(
-    document.querySelectorAll("[data-relation-card]"),
+    document.querySelectorAll(
+      "[data-relation-card]",
+    ),
   );
 
   cards.forEach((card) => {
     const buttons = Array.from(
-      card.querySelectorAll("[data-relation-layer-btn]"),
+      card.querySelectorAll(
+        "[data-relation-layer-btn]",
+      ),
     );
 
     const layers = Array.from(
-      card.querySelectorAll("[data-relation-layer]"),
+      card.querySelectorAll(
+        "[data-relation-layer]",
+      ),
     );
 
     buttons.forEach((button) => {
       button.addEventListener("click", () => {
-        const targetLayer = button.getAttribute(
-          "data-relation-layer-btn",
-        );
+        const targetLayer =
+          button.getAttribute(
+            "data-relation-layer-btn",
+          );
 
         buttons.forEach((otherButton) => {
-          const isActive = otherButton === button;
+          const isActive =
+            otherButton === button;
 
-          otherButton.classList.toggle("is-active", isActive);
+          otherButton.classList.toggle(
+            "is-active",
+            isActive,
+          );
 
           otherButton.setAttribute(
             "aria-pressed",
@@ -162,12 +337,16 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
         });
 
         layers.forEach((layer) => {
-          if (!(layer instanceof HTMLElement)) {
+          if (
+            !(layer instanceof HTMLElement)
+          ) {
             return;
           }
 
           layer.hidden =
-            layer.getAttribute("data-relation-layer") !== targetLayer;
+            layer.getAttribute(
+              "data-relation-layer",
+            ) !== targetLayer;
         });
       });
     });
