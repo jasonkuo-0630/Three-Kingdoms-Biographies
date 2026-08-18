@@ -135,37 +135,6 @@
 
 
 /* ==============================
-   頁面位置（回到勢力人物總覽）
-   ============================== */
-
-.person-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: min(1180px, calc(100% - 40px));
-  margin: 20px auto 0;
-  color: var(--person-muted);
-  font-family: var(--person-display-font);
-  font-size: 14px;
-  letter-spacing: 0.06em;
-}
-
-.person-breadcrumb a {
-  color: inherit;
-  text-decoration: none;
-  transition: color 180ms ease;
-}
-
-.person-breadcrumb a:hover {
-  color: var(--person-cinnabar);
-}
-
-.person-breadcrumb span[aria-hidden] {
-  opacity: 0.6;
-}
-
-
-/* ==============================
    人物卷首
    ============================== */
 
@@ -233,10 +202,40 @@
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr);
   align-items: center;
-  gap: 54px;
+  column-gap: 54px;
+  row-gap: 8px;
   width: min(980px, calc(100% - 40px));
   margin: 0 auto;
   padding: 42px 0;
+}
+
+
+/* 頁面位置：含在人物卷首橫幅內 */
+
+.person-hero__breadcrumb {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(250, 246, 237, 0.72);
+  font-family: var(--person-display-font);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+.person-hero__breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.person-hero__breadcrumb a:hover,
+.person-hero__breadcrumb a:focus-visible {
+  color: #fff;
+}
+
+.person-hero__breadcrumb span[aria-hidden] {
+  opacity: 0.6;
 }
 
 
@@ -587,8 +586,14 @@
   .person-hero__inner {
     grid-template-columns: 1fr;
     justify-items: center;
-    gap: 28px;
+    column-gap: 0;
+    row-gap: 28px;
     padding: 38px 0 42px;
+  }
+
+  .person-hero__breadcrumb {
+    justify-content: center;
+    width: 100%;
   }
 
   .person-hero__portrait {
