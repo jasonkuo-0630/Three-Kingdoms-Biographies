@@ -59,7 +59,7 @@ export interface ParsedRelation {
 
 
 export interface ParsedRelationLayer {
-  text: string;
+  text: string[];
   citations: ParsedCitation[];
 }
 
@@ -98,9 +98,9 @@ export interface ParsedWork {
   title: string;
   type?: string;
   extant?: string;
-  summaryParagraphs: string[];
+  summaryParagraphs: ParsedParagraph[];
   excerpt?: string;
-  originalText?: string;
+  originalText?: string[];
 }
 
 
@@ -244,24 +244,48 @@ function parseCitationLine(line: string): ParsedCitation[] | null {
 
 /**
  * 將親屬說明尾端的「（來源：……）」拆成正文與來源清單。
+ * 吃一整串行（可能是好幾行換行分開的句子），
+ * 只有最後一行結尾可能帶「（來源：……）」。
  */
-function parseRelationLayer(value: string): ParsedRelationLayer {
-  const match = value.match(
+function parseRelationLayerLines(
+  lines: string[],
+): ParsedRelationLayer {
+  if (lines.length === 0) {
+    return { text: [], citations: [] };
+  }
+
+  const lastLine = lines[lines.length - 1];
+
+  const match = lastLine.match(
     /^(.*?)[（(]來源[：:]\s*(.+?)[）)]\s*$/,
   );
 
   if (!match) {
     return {
-      text: value.trim(),
+      text: lines,
       citations: [],
     };
   }
 
+  const textLines = lines.slice(0, -1);
+  const lastText = match[1].trim();
+
+  if (lastText) {
+    textLines.push(lastText);
+  }
+
   return {
-    text: match[1].trim(),
+    text: textLines,
     citations:
       parseCitationLine(`（來源：${match[2]}）`) ?? [],
   };
+}
+
+/**
+ * 相容單行呼叫（例如人物評價的評論者那一行）。
+ */
+function parseRelationLayer(value: string): ParsedRelationLayer {
+  return parseRelationLayerLines([value]);
 }
 
 
@@ -381,12 +405,32 @@ function parseFactionStages(lines: string[]): ParsedFactionStage[] {
 function parseRelations(lines: string[]): ParsedRelation[] {
   const relations: ParsedRelation[] = [];
 
+  let bufferLines: string[] = [];
+  let bufferField: "historical" | "romance" | null = null;
+
+  const flushLayer = () => {
+    if (
+      bufferField &&
+      bufferLines.length > 0 &&
+      relations.length > 0
+    ) {
+      const current = relations[relations.length - 1];
+
+      current[bufferField] = parseRelationLayerLines(bufferLines);
+    }
+
+    bufferLines = [];
+    bufferField = null;
+  };
+
   for (const rawLine of lines) {
     const topMatch = rawLine.match(
       /^-\s+\*\*(.+?)\*\*(?:（連結：([\w-]+)）)?\s*｜\s*(.+)$/,
     );
 
     if (topMatch) {
+      flushLayer();
+
       relations.push({
         targetName: topMatch[1].trim(),
         targetId: topMatch[2],
@@ -400,24 +444,30 @@ function parseRelations(lines: string[]): ParsedRelation[] {
       continue;
     }
 
-    const current = relations[relations.length - 1];
-
     const layerMatch = rawLine.match(
       /^\s+-\s+(史實|演義)[：:]\s*(.+)$/,
     );
 
     if (layerMatch) {
-      if (layerMatch[1] === "史實") {
-        current.historical = parseRelationLayer(
-          layerMatch[2].trim(),
-        );
-      } else {
-        current.romance = parseRelationLayer(
-          layerMatch[2].trim(),
-        );
-      }
+      flushLayer();
+
+      bufferField =
+        layerMatch[1] === "史實" ? "historical" : "romance";
+      bufferLines = [layerMatch[2].trim()];
+
+      continue;
+    }
+
+    if (rawLine.trim() === "") {
+      continue;
+    }
+
+    if (bufferField) {
+      bufferLines.push(rawLine.trim());
     }
   }
+
+  flushLayer();
 
   return relations;
 }
@@ -461,7 +511,7 @@ function parseEvaluationBlock(lines: string[]): ParsedEvaluation[] {
       const evaluatorLayer = parseRelationLayer(evaluatorMatch[1]);
 
       (pending as Partial<ParsedEvaluation>).evaluator =
-        evaluatorLayer.text;
+        evaluatorLayer.text.join("");
       (pending as Partial<ParsedEvaluation>).citations =
         evaluatorLayer.citations;
 
@@ -650,13 +700,28 @@ function parseWorks(lines: string[]): {
   let note: string | undefined;
 
   let bufferLines: string[] = [];
+  let originalTextLines: string[] | null = null;
 
   const flushBuffer = () => {
     if (bufferLines.length > 0 && works.length > 0) {
-      works[works.length - 1].summaryParagraphs.push(bufferLines.join(""));
+      works[works.length - 1].summaryParagraphs.push(
+        extractParagraphCitations(bufferLines),
+      );
     }
 
     bufferLines = [];
+  };
+
+  const flushOriginalText = () => {
+    if (
+      originalTextLines &&
+      originalTextLines.length > 0 &&
+      works.length > 0
+    ) {
+      works[works.length - 1].originalText = originalTextLines;
+    }
+
+    originalTextLines = null;
   };
 
   for (const rawLine of lines) {
@@ -668,6 +733,7 @@ function parseWorks(lines: string[]): {
 
     if (titleMatch) {
       flushBuffer();
+      flushOriginalText();
 
       const [type, extant] = titleMatch[2]
         .replace(/^｜/, "")
@@ -687,6 +753,7 @@ function parseWorks(lines: string[]): {
 
     if (rawLine.trim() === "") {
       flushBuffer();
+      flushOriginalText();
       continue;
     }
 
@@ -694,6 +761,7 @@ function parseWorks(lines: string[]): {
 
     if (noteMatch) {
       flushBuffer();
+      flushOriginalText();
       note = noteMatch[1].trim();
       continue;
     }
@@ -708,6 +776,7 @@ function parseWorks(lines: string[]): {
 
     if (excerptMatch) {
       flushBuffer();
+      flushOriginalText();
       current.excerpt = excerptMatch[1].trim();
       continue;
     }
@@ -716,14 +785,24 @@ function parseWorks(lines: string[]): {
 
     if (originalTextMatch) {
       flushBuffer();
-      current.originalText = originalTextMatch[1].trim();
+      originalTextLines = [originalTextMatch[1].trim()];
       continue;
+    }
+
+    if (originalTextLines) {
+      const continuationMatch = rawLine.match(/^>\s*(.+)$/);
+
+      if (continuationMatch) {
+        originalTextLines.push(continuationMatch[1].trim());
+        continue;
+      }
     }
 
     bufferLines.push(rawLine.trim());
   }
 
   flushBuffer();
+  flushOriginalText();
 
   return { works, note };
 }
