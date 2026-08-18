@@ -68,6 +68,7 @@ export interface ParsedEvaluation {
   quote: string;
   evaluator: string;
   context?: string;
+  citations: ParsedCitation[];
 }
 
 
@@ -89,7 +90,7 @@ export interface ParsedBiographyEntry {
   paragraphs: ParsedParagraph[];
   uncertaintyNote?: string;
   originalText?: string;
-  historicalDifference?: string;
+  historicalDifference?: ParsedParagraph[];
 }
 
 
@@ -455,8 +456,14 @@ function parseEvaluationBlock(lines: string[]): ParsedEvaluation[] {
     const evaluatorMatch = rawLine.match(/^—\s*(.+)$/);
 
     if (evaluatorMatch && pending) {
+      // 評論者這行結尾如果有「（來源：……）」，
+      // 拆成純評論者名稱＋citations，跟親屬關係借用同一套規則。
+      const evaluatorLayer = parseRelationLayer(evaluatorMatch[1]);
+
       (pending as Partial<ParsedEvaluation>).evaluator =
-        evaluatorMatch[1].trim();
+        evaluatorLayer.text;
+      (pending as Partial<ParsedEvaluation>).citations =
+        evaluatorLayer.citations;
 
       continue;
     }
@@ -472,6 +479,7 @@ function parseEvaluationBlock(lines: string[]): ParsedEvaluation[] {
         quote: current.quote ?? "",
         evaluator: current.evaluator ?? "",
         context: current.context,
+        citations: current.citations ?? [],
       });
 
       pending = null;
@@ -481,10 +489,13 @@ function parseEvaluationBlock(lines: string[]): ParsedEvaluation[] {
   flushQuote();
 
   if (pending) {
+    const current = pending as Partial<ParsedEvaluation>;
+
     evaluations.push({
-      quote: (pending as ParsedEvaluation).quote ?? "",
-      evaluator: (pending as ParsedEvaluation).evaluator ?? "",
-      context: (pending as ParsedEvaluation).context,
+      quote: current.quote ?? "",
+      evaluator: current.evaluator ?? "",
+      context: current.context,
+      citations: current.citations ?? [],
     });
   }
 
@@ -495,6 +506,33 @@ function parseEvaluationBlock(lines: string[]): ParsedEvaluation[] {
 /* ==============================
    生平（史實／演義共用）
    ============================== */
+
+/**
+ * 一段文字裡，如果結尾有獨立成行的「（來源：……）」，
+ * 抽出來變成 citations，不留在文字裡面。
+ * 一般段落、與史實的差異說明共用這套邏輯。
+ */
+function extractParagraphCitations(lines: string[]): ParsedParagraph {
+  const textLines: string[] = [];
+  const citations: ParsedCitation[] = [];
+
+  for (const line of lines) {
+    const found = parseCitationLine(line);
+
+    if (found) {
+      citations.push(...found);
+      continue;
+    }
+
+    textLines.push(line);
+  }
+
+  return {
+    text: textLines.join(""),
+    citations,
+  };
+}
+
 
 function parseBiographySection(
   lines: string[],
@@ -516,36 +554,21 @@ function parseBiographySection(
     if (bufferLines.length > 0 && entries.length > 0) {
       const current = entries[entries.length - 1];
 
+      const parsed = extractParagraphCitations(bufferLines);
+
       if (bufferTarget === "difference") {
-        current.historicalDifference = bufferLines.join("");
+        current.historicalDifference = current.historicalDifference ?? [];
+        current.historicalDifference.push(parsed);
       } else {
-        /*
-         * 段落最後一行如果是「（來源：……）」，
-         * 抽出來變成 citations，不留在段落文字裡面。
-         */
-        const textLines: string[] = [];
-        const citations: ParsedCitation[] = [];
-
-        for (const bufferedLine of bufferLines) {
-          const found = parseCitationLine(bufferedLine);
-
-          if (found) {
-            citations.push(...found);
-            continue;
-          }
-
-          textLines.push(bufferedLine);
-        }
-
-        current.paragraphs.push({
-          text: textLines.join(""),
-          citations,
-        });
+        current.paragraphs.push(parsed);
       }
     }
 
     bufferLines = [];
-    bufferTarget = "paragraph";
+    // 注意：這裡不再把 bufferTarget 重置回 "paragraph"。
+    // 讓「與史實的差異」可以跨越空行分成好幾段，
+    // 不會因為你想換段而被誤判成一般段落塞錯地方。
+    // bufferTarget 只在遇到下一個人物階段標題時才歸零，見下方 titleMatch。
   };
 
   for (const rawLine of lines) {
@@ -553,6 +576,7 @@ function parseBiographySection(
 
     if (titleMatch) {
       flushBuffer();
+      bufferTarget = "paragraph";
 
       const [period, title] = titleMatch[1]
         .split("・")
