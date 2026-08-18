@@ -36,6 +36,18 @@ const groups = [
               <footer class="person-evaluation__evaluator">
                 — {evaluation.evaluator}
               </footer>
+
+              {evaluation.citations.length > 0 && (
+                <ul class="person-rank-list__sources">
+                  {evaluation.citations.map((citation) => (
+                    <li>
+                      {citation.source}
+                      {citation.locator && <small>{citation.locator}</small>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
               {evaluation.context && (
                 <p class="person-evaluation__context">{evaluation.context}</p>
               )}
