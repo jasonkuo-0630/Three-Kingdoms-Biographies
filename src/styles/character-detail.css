@@ -781,7 +781,7 @@
 }
 
 .person-overview__prose p + p {
-  margin-top: 12px;
+  margin-top: 0;
 }
 
 /* 段落最後一行「（來源：……）」抽出來的乾淨小字來源清單 */
