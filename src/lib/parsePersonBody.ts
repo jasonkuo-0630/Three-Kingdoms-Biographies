@@ -53,8 +53,14 @@ export interface ParsedRelation {
   targetName: string;
   targetId?: string;
   relationGroupLabel: string;
-  historical?: string;
-  romance?: string;
+  historical?: ParsedRelationLayer;
+  romance?: ParsedRelationLayer;
+}
+
+
+export interface ParsedRelationLayer {
+  text: string;
+  citations: ParsedCitation[];
 }
 
 
@@ -235,6 +241,29 @@ function parseCitationLine(line: string): ParsedCitation[] | null {
 }
 
 
+/**
+ * 將親屬說明尾端的「（來源：……）」拆成正文與來源清單。
+ */
+function parseRelationLayer(value: string): ParsedRelationLayer {
+  const match = value.match(
+    /^(.*?)[（(]來源[：:]\s*(.+?)[）)]\s*$/,
+  );
+
+  if (!match) {
+    return {
+      text: value.trim(),
+      citations: [],
+    };
+  }
+
+  return {
+    text: match[1].trim(),
+    citations:
+      parseCitationLine(`（來源：${match[2]}）`) ?? [],
+  };
+}
+
+
 /* ==============================
    人物總覽
    ============================== */
@@ -378,9 +407,13 @@ function parseRelations(lines: string[]): ParsedRelation[] {
 
     if (layerMatch) {
       if (layerMatch[1] === "史實") {
-        current.historical = layerMatch[2].trim();
+        current.historical = parseRelationLayer(
+          layerMatch[2].trim(),
+        );
       } else {
-        current.romance = layerMatch[2].trim();
+        current.romance = parseRelationLayer(
+          layerMatch[2].trim(),
+        );
       }
     }
   }
