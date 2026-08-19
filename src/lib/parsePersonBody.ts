@@ -626,10 +626,15 @@ function parseBiographySection(
       entries.length > 0
     ) {
       const current = entries[entries.length - 1];
+      // 原文的來源是接在最後一行句尾，不是獨立成行，
+      // 這跟親屬關係同一種格式，借用同一套規則，
+      // 不能用 extractParagraphCitations（那個是找獨立成行的來源）。
+      const layer = parseRelationLayerLines(originalTextLines);
 
-      current.originalTexts.push(
-        extractParagraphCitations(originalTextLines),
-      );
+      current.originalTexts.push({
+        text: layer.text.join(""),
+        citations: layer.citations,
+      });
     }
 
     originalTextLines = null;
