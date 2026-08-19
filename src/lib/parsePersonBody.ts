@@ -463,7 +463,7 @@ function parseRelations(lines: string[]): ParsedRelation[] {
     }
 
     const layerMatch = rawLine.match(
-      /^\s+-\s+(史實|演義)[：:]\s*(.+)$/,
+      /^\s+-\s+(史實|後世)[：:]\s*(.+)$/,
     );
 
     if (layerMatch) {
@@ -473,6 +473,11 @@ function parseRelations(lines: string[]): ParsedRelation[] {
         layerMatch[1] === "史實" ? "historical" : "romance";
       bufferLines = [layerMatch[2].trim()];
 
+      continue;
+    }
+
+        if (rawLine.trim() === "---") {
+      flushLayer();
       continue;
     }
 
