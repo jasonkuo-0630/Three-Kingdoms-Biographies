@@ -7,6 +7,7 @@ import type {
 
 
 export interface OverviewIdentity {
+  id: string;
   name: string;
   otherNames?: string[];
   posthumousTitle?: {
@@ -69,6 +70,7 @@ const hasPosthumousDetail = Boolean(
 interface StageGroup {
   leaderName: string;
   leaderId?: string;
+  hideAvatar: boolean;
   stages: ParsedFactionStage[];
 }
 
@@ -80,13 +82,15 @@ for (const stage of factionStages) {
   if (
     lastGroup &&
     lastGroup.leaderId === stage.leaderId &&
-    lastGroup.leaderName === stage.leaderName
+    lastGroup.leaderName === stage.leaderName &&
+    lastGroup.hideAvatar === stage.hideAvatar
   ) {
     lastGroup.stages.push(stage);
   } else {
     stageGroups.push({
       leaderName: stage.leaderName,
       leaderId: stage.leaderId,
+      hideAvatar: stage.hideAvatar,
       stages: [stage],
     });
   }
@@ -235,31 +239,46 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
               ? personLookup.get(group.leaderId)
               : undefined;
 
+            // 效力對象剛好是本人（例如劉備稱帝後「效力於劉備」）：
+            // 頭像照樣抓真實頭像，但不给連結，因為連去同一頁沒有意義。
+            const isSelf = Boolean(target) && group.leaderId === identity.id;
+
             const leaderName = target?.name ?? group.leaderName;
             const leaderAvatar = target?.avatar;
-            const LeaderTag = target ? "a" : "div";
+            const LeaderTag = target && !isSelf ? "a" : "div";
 
             return (
               <li class="person-service-group">
                 <LeaderTag
                   class:list={[
                     "person-service-leader",
-                    { "is-link": Boolean(target) },
+                    { "is-link": Boolean(target) && !isSelf },
                   ]}
-                  href={target ? `${base}character/${group.leaderId}/` : undefined}
+                  href={
+                    target && !isSelf
+                      ? `${base}character/${group.leaderId}/`
+                      : undefined
+                  }
                 >
-                  <img
-                    src={
-                      leaderAvatar
-                        ? `${base}${leaderAvatar}`
-                        : `${base}images/_placeholder.svg`
-                    }
-                    alt=""
-                  />
+                  {group.hideAvatar ? (
+                    <span
+                      class="person-service-leader__spacer"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <img
+                      src={
+                        leaderAvatar
+                          ? `${base}${leaderAvatar}`
+                          : `${base}images/_placeholder.svg`
+                      }
+                      alt=""
+                    />
+                  )}
 
                   <strong>{leaderName}</strong>
 
-                  {target && (
+                  {target && !isSelf && (
                     <span class="person-service-leader__arrow" aria-hidden="true">
                       →
                     </span>
