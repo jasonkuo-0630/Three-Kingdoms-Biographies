@@ -90,7 +90,7 @@ export interface ParsedBiographyEntry {
   title: string;
   paragraphs: ParsedParagraph[];
   uncertaintyNote?: string;
-  originalText?: string;
+  originalTexts: ParsedParagraph[];
   historicalDifference?: ParsedParagraph[];
 }
 
@@ -617,6 +617,23 @@ function parseBiographySection(
    * 不會被誤判成一段獨立的白話段落。
    */
   let bufferTarget: "paragraph" | "difference" = "paragraph";
+  let originalTextLines: string[] | null = null;
+
+  const flushOriginalText = () => {
+    if (
+      originalTextLines &&
+      originalTextLines.length > 0 &&
+      entries.length > 0
+    ) {
+      const current = entries[entries.length - 1];
+
+      current.originalTexts.push(
+        extractParagraphCitations(originalTextLines),
+      );
+    }
+
+    originalTextLines = null;
+  };
 
   const flushBuffer = () => {
     if (bufferLines.length > 0 && entries.length > 0) {
@@ -644,6 +661,7 @@ function parseBiographySection(
 
     if (titleMatch) {
       flushBuffer();
+      flushOriginalText();
       bufferTarget = "paragraph";
 
       const [period, title] = titleMatch[1]
@@ -654,6 +672,7 @@ function parseBiographySection(
         period: period ?? titleMatch[1].trim(),
         title: title ?? "",
         paragraphs: [],
+        originalTexts: [],
       });
 
       continue;
@@ -661,6 +680,7 @@ function parseBiographySection(
 
     if (rawLine.trim() === "") {
       flushBuffer();
+      flushOriginalText();
       continue;
     }
 
@@ -674,6 +694,7 @@ function parseBiographySection(
 
     if (noteMatch) {
       flushBuffer();
+      flushOriginalText();
       current.uncertaintyNote = noteMatch[1].trim();
       continue;
     }
@@ -682,8 +703,22 @@ function parseBiographySection(
 
     if (originalTextMatch) {
       flushBuffer();
-      current.originalText = originalTextMatch[1].trim();
+      // 上一則「> 原文：」還沒被空行結束就遇到新的一則，
+      // 先把前一則收掉，再開新的一則，不會互相蓋掉。
+      flushOriginalText();
+      originalTextLines = [originalTextMatch[1].trim()];
       continue;
+    }
+
+    // 同一則原文如果分成好幾行、每行都用 > 開頭延續，
+    // 沒有再寫一次「原文：」，這裡接續收集。
+    if (originalTextLines) {
+      const originalContinuationMatch = rawLine.match(/^>\s*(.+)$/);
+
+      if (originalContinuationMatch) {
+        originalTextLines.push(originalContinuationMatch[1].trim());
+        continue;
+      }
     }
 
     const differenceMatch = rawLine.match(
@@ -692,6 +727,7 @@ function parseBiographySection(
 
     if (differenceMatch) {
       flushBuffer();
+      flushOriginalText();
       bufferTarget = "difference";
       bufferLines.push(differenceMatch[1].trim());
       continue;
@@ -701,6 +737,7 @@ function parseBiographySection(
   }
 
   flushBuffer();
+  flushOriginalText();
 
   return entries;
 }
