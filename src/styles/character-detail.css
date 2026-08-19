@@ -1102,6 +1102,12 @@ a.person-service-leader {
   object-fit: cover;
 }
 
+.person-service-leader__spacer {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+}
+
 .person-service-leader strong {
   min-width: 0;
   font-family: var(--person-display-font);
@@ -1237,7 +1243,8 @@ a.person-service-leader.is-link:focus-visible {
       );
   }
 
-  .person-service-leader img {
+  .person-service-leader img,
+  .person-service-leader__spacer {
     width: 45px;
     height: 45px;
     flex-basis: 45px;
