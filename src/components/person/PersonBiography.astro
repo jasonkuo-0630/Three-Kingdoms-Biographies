@@ -57,10 +57,25 @@ const { entries, isRomance = false } = Astro.props;
             </aside>
           )}
 
-          {entry.originalText && (
+          {entry.originalTexts.length > 0 && (
             <details class="person-biography-entry__original">
               <summary>展開原文</summary>
-              <p>{entry.originalText}</p>
+              {entry.originalTexts.map((original) => (
+                <>
+                  <p>{original.text}</p>
+
+                  {original.citations.length > 0 && (
+                    <ul class="person-rank-list__sources person-paragraph-citations">
+                      {original.citations.map((citation) => (
+                        <li>
+                          {citation.source}
+                          {citation.locator && <small>{citation.locator}</small>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ))}
             </details>
           )}
 
