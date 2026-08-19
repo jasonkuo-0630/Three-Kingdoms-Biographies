@@ -43,6 +43,7 @@ export interface ParsedTitleAndRank {
 export interface ParsedFactionStage {
   leaderName: string;
   leaderId?: string;
+  hideAvatar: boolean;
   title: string;
   period?: string;
   periodUncertain: boolean;
@@ -381,6 +382,22 @@ function parseFactionStages(lines: string[]): ParsedFactionStage[] {
       .split("｜")
       .map((part) => part.trim());
 
+    // 「（無頭像）」：這個階段的效力對象不需要頭像也不需要連結，
+    // 例如朝廷、政權這類非人物實體，或效力對象就是這篇人物本人。
+    const hideAvatarMatch = leaderPart.match(/^(.+?)（無頭像）$/);
+
+    if (hideAvatarMatch) {
+      stages.push({
+        leaderName: hideAvatarMatch[1].trim(),
+        leaderId: undefined,
+        hideAvatar: true,
+        title: title ?? "",
+        period: period || undefined,
+        periodUncertain: Boolean(flag?.includes("推定")),
+      });
+      continue;
+    }
+
     const leaderMatch = leaderPart.match(
       /^(.+?)(?:（連結：([\w-]+)）)?$/,
     );
@@ -388,6 +405,7 @@ function parseFactionStages(lines: string[]): ParsedFactionStage[] {
     stages.push({
       leaderName: leaderMatch?.[1]?.trim() ?? leaderPart,
       leaderId: leaderMatch?.[2],
+      hideAvatar: false,
       title: title ?? "",
       period: period || undefined,
       periodUncertain: Boolean(flag?.includes("推定")),
