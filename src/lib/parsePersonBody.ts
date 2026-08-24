@@ -244,42 +244,54 @@ function parseCitationLine(line: string): ParsedCitation[] | null {
 
 
 /**
- * 將親屬說明尾端的「（來源：……）」拆成正文與來源清單。
- * 吃一整串行（可能是好幾行換行分開的句子），
- * 只有最後一行結尾可能帶「（來源：……）」。
+ * 將親屬說明裡的「（來源：……）」抽成正文與來源清單。
+ * 支援兩種寫法，可以混用：
+ *   1. 來源自己獨立一整行（跟一般段落的來源慣例一致），
+ *      可以連續好幾行，每行各自算一筆來源。
+ *   2. 舊有寫法：來源接在最後一句文字的句尾，同一行。
+ * 只要一行「整行」符合來源格式就走第 1 種；
+ * 否則檢查行尾有沒有夾帶來源，有的話文字跟來源各自拆開。
  */
 function parseRelationLayerLines(
   lines: string[],
 ): ParsedRelationLayer {
-  if (lines.length === 0) {
-    return { text: [], citations: [] };
+  const textLines: string[] = [];
+  const citations: ParsedCitation[] = [];
+
+  for (const line of lines) {
+    const wholeLineCitation = parseCitationLine(line);
+
+    if (wholeLineCitation) {
+      citations.push(...wholeLineCitation);
+      continue;
+    }
+
+    const trailingMatch = line.match(
+      /^(.*?)[（(]來源[：:]\s*(.+?)[）)]\s*$/,
+    );
+
+    if (trailingMatch) {
+      const leadingText = trailingMatch[1].trim();
+
+      if (leadingText) {
+        textLines.push(leadingText);
+      }
+
+      const found = parseCitationLine(
+        `（來源：${trailingMatch[2]}）`,
+      );
+
+      if (found) {
+        citations.push(...found);
+      }
+
+      continue;
+    }
+
+    textLines.push(line);
   }
 
-  const lastLine = lines[lines.length - 1];
-
-  const match = lastLine.match(
-    /^(.*?)[（(]來源[：:]\s*(.+?)[）)]\s*$/,
-  );
-
-  if (!match) {
-    return {
-      text: lines,
-      citations: [],
-    };
-  }
-
-  const textLines = lines.slice(0, -1);
-  const lastText = match[1].trim();
-
-  if (lastText) {
-    textLines.push(lastText);
-  }
-
-  return {
-    text: textLines,
-    citations:
-      parseCitationLine(`（來源：${match[2]}）`) ?? [],
-  };
+  return { text: textLines, citations };
 }
 
 /**
