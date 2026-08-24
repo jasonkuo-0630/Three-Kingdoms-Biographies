@@ -844,8 +844,8 @@
 .person-service-stage__sources,
 .person-posthumous-detail__sources {
   display: flex;
-  flex-wrap: wrap;
-  gap: 7px 14px;
+  flex-direction: column;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
